@@ -1,6 +1,6 @@
 <br/>
 <br/>
-<center><img src="img/Logo_text.png" all = "Project Logo"/></center>
+<center><img src="img/Logo_text_1.png" all = "Project Logo"/></center>
 <br/>
 <br/>
 <center><h1>Code Repository</h1></center>
