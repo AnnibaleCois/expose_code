@@ -2,7 +2,7 @@
 * EXPOSE - DATA EXTRACTION                                                                                                                           *
 * South Africa Demographic and Health Survey 2016 (DHS 2016)                                                                                         *
 * Annibale Cois (acois@sun.ac.za) & Kafui Adjaye-Gbewonyo (k.adjayegbewonyo@greenwich.ac.uk)                                                         *
-* Version 1.0 - September 2022                                                                                                                       *
+* Version 1.0                                                                                                                                        *
 ******************************************************************************************************************************************************
 
 clear
@@ -921,7 +921,7 @@ label data "DHS 2016 - Core Variables - $S_DATE"
 
 
 * Save & erase temporary files  
-save "$OUT/DHS2016.dta", replace
+save "$TEMP/DHS2016.dta", replace
 erase "$TEMP/TEMP_1.dta"
 erase "$TEMP/TEMP_1A.dta"
 erase "$TEMP/TEMP_2.dta"

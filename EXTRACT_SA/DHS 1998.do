@@ -2,7 +2,7 @@
 * EXPOSE - DATA EXTRACTION                                                                                                                           *
 * South Africa Demographic and Health Survey 1998 (DHS 1998)                                                                                         *
 * Annibale Cois (acois@sun.ac.za) & Kafui Adjaye-Gbewonyo (k.adjayegbewonyo@greenwich.ac.uk)                                                         *
-* Version 1 - September 2022                                                                                                                         *
+* Version 1.0                                                                                                                                        *
 ******************************************************************************************************************************************************
 
 clear
@@ -673,7 +673,7 @@ label drop _all
 * Label the dataset
 label data "DHS 1998 - Core Variables - $S_DATE"
 
-save "$OUT/DHS1998.dta", replace
+save "$TEMP/DHS1998.dta", replace
 erase "$TEMP/TEMP_1.dta"
 erase "$TEMP/TEMP_2.dta"
 erase "$TEMP/TEMP_3.dta"

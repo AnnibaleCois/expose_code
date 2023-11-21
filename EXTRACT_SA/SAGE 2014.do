@@ -2,7 +2,7 @@
 * EXPOSE - DATA EXTRACTION                                                                                                                           *
 * Study on global AGEing and adult health 2014 (SAGE 2014)                                                                                           *
 * Annibale Cois (acois@sun.ac.za) & Kafui Adjaye-Gbewonyo (k.adjayegbewonyo@greenwich.ac.uk) & Meseret Mamo (mesistar.mamo@gmail.com)                *
-* Version 1.0 - September 2022                                                                                                                       *
+* Version 1.0                                                                                                                                        *
 ******************************************************************************************************************************************************
 
 clear
@@ -467,7 +467,7 @@ label drop _all
 * Label the datset
 label data "SAGE 2014 - Core Variables - $S_DATE"
   
-save "$OUT/SAGE2014.dta", replace
+save "$TEMP/SAGE2014.dta", replace
 erase "$TEMP/TEMP_2.dta"
 erase "$TEMP/TEMP_3.dta"
 erase "$TEMP/TEMP_4.dta"

@@ -2,7 +2,7 @@
 * EXPOSE - DATA EXTRACTION                                                                                                                           *
 * South Africa Demographic and Health Survey 2003 (DHS 2003)                                                                                         *
 * Annibale Cois (acois@sun.ac.za) & Kafui Adjaye-Gbewonyo (k.adjayegbewonyo@greenwich.ac.uk)                                                         *
-* Version 1.0 - September 2022                                                                                                                       *
+* Version 1.0                                                                                                                                        *
 ******************************************************************************************************************************************************
 
 clear
@@ -714,7 +714,7 @@ label drop _all
 * Label the datset
 label data "DHS 2003 - Core Variables - $S_DATE" 
  
-save "$OUT/DHS2003.dta", replace
+save "$TEMP/DHS2003.dta", replace
 erase "$TEMP/TEMP_1.dta"
 erase "$TEMP/TEMP_2.dta"
 erase "$TEMP/TEMP_3.dta"

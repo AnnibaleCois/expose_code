@@ -1,7 +1,11 @@
 ******************************************************************************************************************************************************
-* EXPOSE - CONSOLIDATE DATASET                                                                                                                       *
-* Annibale Cois (acois@sun.ac.za) & Kafui Adjaye-Gbewonyo (k.adjayegbewonyo@greenwich.ac.uk)                                                         *
-* Version 1.0 - November 2022                                                                                                                        *
+* EXPOSE - DATA EXTRACTION & CONSOLIDATION                                                                                                           *
+*                                                                                                                                                    *
+* INPUT: Datafiles for SADHS1998, SADHS2003, SADHS2016, NIDS wave 1-5, SAGE 2007, SAGE 2014, SANHNANES2012                                           *
+* OUTPUT: Consolidated, harmonised EXPOSE SOUTH AFRICA DATASET (EXPOSE_SA.dta)                                                                       *
+*                                                                                                                                                    *
+* Annibale Cois (acois@sun.ac.za)                                                                                                                    *
+* Version 1.0                                                                                                                                        *
 ******************************************************************************************************************************************************
 
 clear
@@ -9,22 +13,74 @@ set more off
 
 ******************************************************************************************************************************************************
 * LOCATION OF FILES AND FOLDERS                                                                                                                      *
+*                                                                                                                                                    *
+* [BASE DIRECTORY]                                                                                                                                   *
+* └ DHS                                                                                                                                              *                                                                                                                                                                                                                                                  
+* │   └ Datafiles                                                                                                                                    *
+* │ 	└ 	ZAHR31FL.dta                                                                                                                             * 
+* │         ZAAH33FL.dta                                                                                                                             *
+* │ 		hholdout.dta                                                                                                                             *
+* │ 		adultout.dta                                                                                                                             *
+* │      	personsout.dta                                                                                                                           *
+* │ 		ZAPR71FL.dta                                                                                                                             *
+* │  		ZAAHM71FL.dta                                                                                                                            *
+* │   		ZAAHW71FL.dta                                                                                                                            *
+* │  		ZAIR71FL.dta                                                                                                                             *
+* │    		ZAHR71FL.dta                                                                                                                             *
+* │                                                                                                                                                  *
+* └ NIDS                                                                                                                                             *
+* │   └ Datafiles                                                                                                                                    *
+* │       └ Adult_W1_Anon_V7.0.0.dta                                                                                                                 *
+* │   		Adult_W1_Anon_V7.0.0.dta                                                                                                                 *
+* │  		indderived_W1_Anon_V7.0.0.dta                                                                                                            *
+* │  		HHQuestionnaire_W1_Anon_V7.0.0.dta                                                                                                       *
+* │   		hhderived_W1_Anon_V7.0.0.dta                                                                                                             *
+* │  		HouseholdRoster_W1_Anon_V7.0.0.dta                                                                                                       *
+* │  		Adult_W2_Anon_V4.0.0.dta                                                                                                                 *         
+* │  		indderived_W2_Anon_V4.0.0.dta                                                                                                            *     
+* │  		HHQuestionnaire_W2_Anon_V4.0.0.dta                                                                                                       *
+* │  		hhderived_W2_Anon_V4.0.0.dta                                                                                                             *     
+* │  		Link_File_W2_Anon_V4.0.0.dta                                                                                                             *       
+* │ 		Adult_W3_Anon_V3.0.0.dta                                                                                                                 *           
+* │  		indderived_W3_Anon_V3.0.0.dta                                                                                                            *      
+* │  		HHQuestionnaire_W3_Anon_V3.0.0.dta                                                                                                       *
+* │  		hhderived_W3_Anon_V3.0.0.dta                                                                                                             *       
+* │  		Link_File_W3_Anon_V3.0.0.dta                                                                                                             *      
+* │  		Adult_W4_Anon_V2.0.0.dta                                                                                                                 *           
+* │ 		indderived_W4_Anon_V2.0.0.dta                                                                                                            *      
+* │  		HHQuestionnaire_W4_Anon_V2.0.0.dta                                                                                                       *
+* │ 		hhderived_W4_Anon_V2.0.0.dta                                                                                                             *       
+* │ 		Link_File_W4_Anon_V2.0.0.dta                                                                                                             *      
+* │  		Adult_W5_Anon_V1.0.0.dta                                                                                                                 *          
+* │  		indderived_W5_Anon_V1.0.0.dta                                                                                                            *   
+* │ 		HHQuestionnaire_W5_Anon_V1.0.0.dta                                                                                                       * 
+* │ 		hhderived_W5_Anon_V1.0.0.dta                                                                                                             *
+* │ 		Link_File_W5_Anon_V1.0.0.dta                                                                                                             * 
+* └ SAGE                                                                                                                                             *
+* │   └ Datafiles                                                                                                                                    *
+* │       └ SouthAfricaHHData.dta	                                                                                                                 *    
+* │  		SouthAfricaINDData.dta                                                                                                                   *         
+* │  		SouthAfricaINDDataW2.dta                                                                                                                 *
+* └ SANHANES                                                                                                                                         *
+*     └ Datafiles                                                                                                                                    *
+*         └ SANHANES Visiting point data_anon.dta                                                                                                    *  
+*  		    SANHANES Individual clinical_anonymised.dta	                                                                                             *
+*   		SANHANES_WB_NEW_all_anonymised.dta                                                                                                       *  	
+*    		SANHANES2011_12_Adult_Exam.csv                                                                                                           *
+*                                                                                                                                                    *
 ******************************************************************************************************************************************************
 
 * BASE DATA DIRECTORY 
-global BASEDIR "**** HERE YOU BASE DIRECTORY FOR THE DATA *****"
+global BASEDIR "********************"      // Insert here the path of the base directory 
 
 * OUTPUT DIRECTORY
 global OUT "./OUT"
-
-* INPUT DIRECTORY
-global IN "./OUT"
 
 * TEMP DIRECTORY 
 global TEMP "./TEMP"	
 
 * AUX DATA DIRECTORY
-global AUX "../DATA"
+global AUX "./AUXILIARY"
 
 ******************************************************************************************************************************************************
 * CLEANING PARAMETERS                                                                                                                                * 
@@ -60,6 +116,24 @@ global RHR_MAX = 250
 global BMI_MIN = 10
 global BMI_MAX = 131
 
+global HBA1C_MIN = 3.5
+global HBA1C_MAX = 200
+
+global CHOLTOT_MIN = 0.1
+global CHOLTOT_MAX = 16
+
+global CHOLHDL_MIN = 0.1
+global CHOLHDL_MAX = 16
+
+global CHOLLDL_MIN = 0.1
+global CHOLLDL_MAX = 16
+
+global TRIG_MIN = 0.1
+global TRIG_MAX = 16
+
+global HB_MIN = 5
+global HB_MAX = 20
+
 ******************************************************************************************************************************************************
 * EXTRACT                                                                                                                                            * 
 ******************************************************************************************************************************************************
@@ -80,17 +154,17 @@ do "SAGE 2014.do"
 * APPEND                                                                                                                                             * 
 ******************************************************************************************************************************************************
 
-use "$IN/DHS1998.dta", clear 
-append using "$IN/DHS2003.dta"
-append using "$IN/DHS2016.dta"
-append using "$IN/SANHANES2012.dta"
-append using "$IN/NIDS2008.dta"
-append using "$IN/NIDS2010-11.dta"
-append using "$IN/NIDS2012.dta"
-append using "$IN/NIDS2014-15.dta"
-append using "$IN/NIDS2017.dta"
-append using "$IN/SAGE2007.dta"
-append using "$IN/SAGE2014.dta"
+use "$TEMP/DHS1998.dta", clear 
+append using "$TEMP/DHS2003.dta"
+append using "$TEMP/DHS2016.dta"
+append using "$TEMP/SANHANES2012.dta"
+append using "$TEMP/NIDS2008.dta"
+append using "$TEMP/NIDS2010-11.dta"
+append using "$TEMP/NIDS2012.dta"
+append using "$TEMP/NIDS2014-15.dta"
+append using "$TEMP/NIDS2017.dta"
+append using "$TEMP/SAGE2007.dta"
+append using "$TEMP/SAGE2014.dta"
 
 ******************************************************************************************************************************************************
 * CLEANING ANTHROPOMETRIC VARIABLES                                                                                                                  * 
@@ -150,6 +224,15 @@ drop diff1 diff2 diff3
 replace rhr1=. if rhr1<$RHR_MIN | rhr1>$RHR_MAX
 replace rhr2=. if rhr2<$RHR_MIN | rhr2>$RHR_MAX 
 replace rhr3=. if rhr3<$RHR_MIN | rhr3>$RHR_MAX  
+		
+* Laboratory	
+	
+replace hb=. if hb<$HB_MIN | hb>$HB_MAX
+replace HbA1c=. if hb<$HBA1C_MIN | HbA1c>$HBA1C_MAX
+replace chol_tot=. if chol_tot<$CHOLTOT_MIN | chol_tot>$CHOLTOT_MAX
+replace chol_hdl=. if chol_hdl<$CHOLHDL_MIN | chol_hdl>$CHOLHDL_MAX
+replace chol_ldl=. if chol_ldl<$CHOLLDL_MIN | chol_ldl>$CHOLLDL_MAX
+replace trig=. if trig<$TRIG_MIN | trig>$TRIG_MAX
 		
 ******************************************************************************************************************************************************
 * DERIVED VARIABLES, FURTHER RECODE                                                                                                                  * 
@@ -308,12 +391,224 @@ replace stratum = stratum + 6*100000 if source == 10
 
 drop if race_imp == 9999 | race_imp>=.
 
+save "$TEMP/PRECALIB.dta", replace
+
 ******************************************************************************************************************************************************
 * RECALIBRATE WEIGHTS (1) : BASE WEIGHTS                                                                                                             * 
 ******************************************************************************************************************************************************
 
+* 1: age cutpoints: 0 15 20 25 30 35 40 45 50 55 60 65 75 120
+
+use "$TEMP/PRECALIB.dta", clear 
+
 * Generate calibration variables
-egen age1 = cut(age), at(0 15 25 35 45 55 65 120) icodes
+egen age1 = cut(age), at(0 15 20 25 30 35 40 45 50 55 60 65 75 120) icodes
+gen race1 = race_imp
+replace race1 = 5 if race_imp == 9999 | race_imp>=.
+
+	* Race-sex-age interaction
+foreach r of numlist 1(1)4 {
+   foreach s of numlist 1(1)2 {
+       foreach a of numlist 1(1)12 {
+         gen D1_`r'_`s'_`a'= race1==`r' & sex==`s' & age1==`a'
+     }
+   }
+}
+
+	* Provinces
+foreach p of numlist 1(1)8 {
+         gen D2_`p'= prov==`p'
+     }
+	
+* Save intermediate dataset (1)
+label data "Intermediate (1)"
+save "$TEMP/BASE_CORE_1A.dta", replace
+
+* Loop over surveys 
+
+foreach s of numlist  1 2 4 6 7 9 10 11 {
+
+di "**************** Recalibrating weights: source = `s'"
+use "$TEMP/BASE_CORE_1A.dta", clear 
+di "`s'"
+keep if source == `s'								
+	* Extract median year of data collection
+_pctile inty
+global YEAR = int(r(r1))
+gen Year = $YEAR  		
+  
+	* Read and pre-process population data - Create matrices of cell totals for reweighting
+preserve 
+	use "$AUX/Population/POP1A.dta", clear
+	keep if Year == $YEAR
+	drop if age1 == 0 
+	collapse (sum) Pop, by(race sex age1)
+	mkmat Pop
+	matrix POP1 = Pop
+	sum Pop
+	global POPTOT = r(sum)
+	matrix POP1 = POP1/$POPTOT 
+
+	use "$AUX/Population/POP2A.dta", clear
+	keep if Year == $YEAR	
+	drop if age1 == 0
+	collapse (sum) Pop, by(prov)
+	mkmat Pop
+	matrix POP2 = Pop[1..8,1]
+	matrix POP2 = POP2/$POPTOT 
+restore
+
+	* Rescale original weights to sum 1 (as required by maxentropy)
+sum aweight
+replace aweight = aweight/r(N) 
+  
+    * Create calibration matrices
+matrix MARGINS = POP1\POP2	
+
+    * Exlude one redundant dummy in the race*sex*age 
+drop D1_1_1_1
+matrix MARGINS = MARGINS[2..104,1]
+
+	* Recalibrate weights to MARGINS
+	* Simple calibration for SAGE 2007, SAGE 2014, SANHNES 2012, DHS 2016 (where sampling within the househodl was carried out) 
+	* With constant household weigth for NIDS, DHS 1998, DHS 2003 (which sampled only at the household level) 
+	
+	if (`s' == 7 | `s' == 8 | `s' == 10) {
+		maxentropy D1_* D2_*, gen(aweight_rec, replace) p(aweight) total($POPTOT) matrix(MARGINS) 
+	} 
+	else {
+		preserve 
+			bysort hhid: egen hhsize = count(hhid) 
+			gen hweight1 = hhsize*hweight
+			collapse (mean) hweight1 hhsize D1_* D2_*, by(hhid)
+			maxentropy D1_* D2_*, gen(hweight_rec, replace) p(hweight1) total($POPTOT) matrix(MARGINS)   
+			drop D1_* D2_* 
+			save "$TEMP/HWEIGHTS.dta", replace
+		restore
+		merge m:1 hhid using "$TEMP/HWEIGHTS.dta"
+		gen aweight_rec = hweight_rec/hhsize
+		drop hhsize  	
+	}
+
+    * Rescale original weights to sum to the population 	
+replace aweight = aweight * $POPTOT		
+	
+	* Delete temporary variables
+drop D1_* D2_* age1 race1   
+
+	* Save temporary
+save "$TEMP/TEMP_`s'.dta", replace
+}
+
+* 2: age cutpoints: 0 15 20 25 30 35 40 45 50 55 60 65 70 120
+
+use "$TEMP/PRECALIB.dta", clear 
+
+* Generate calibration variables
+egen age1 = cut(age), at(0 15 20 25 30 35 40 45 50 55 60 65 70 120) icodes
+gen race1 = race_imp
+replace race1 = 5 if race_imp == 9999 | race_imp>=.
+
+	* Race-sex-age interaction
+foreach r of numlist 1(1)4 {
+   foreach s of numlist 1(1)2 {
+       foreach a of numlist 1(1)12 {
+         gen D1_`r'_`s'_`a'= race1==`r' & sex==`s' & age1==`a'
+     }
+   }
+}
+
+	* Provinces
+foreach p of numlist 1(1)8 {
+         gen D2_`p'= prov==`p'
+     }
+	
+* Save intermediate dataset (1)
+label data "Intermediate (1)"
+save "$TEMP/BASE_CORE_1A.dta", replace
+
+* Loop over surveys 
+
+foreach s of numlist 5 {
+
+di "**************** Recalibrating weights: source = `s'"
+use "$TEMP/BASE_CORE_1A.dta", clear 
+di "`s'"
+keep if source == `s'								
+	* Extract median year of data collection
+_pctile inty
+global YEAR = int(r(r1))
+gen Year = $YEAR  		
+  
+	* Read and pre-process population data - Create matrices of cell totals for reweighting
+preserve 
+	use "$AUX/Population/POP1B.dta", clear
+	keep if Year == $YEAR
+	drop if age1 == 0 
+	collapse (sum) Pop, by(race sex age1)
+	mkmat Pop
+	matrix POP1 = Pop
+	sum Pop
+	global POPTOT = r(sum)
+	matrix POP1 = POP1/$POPTOT 
+
+	use "$AUX/Population/POP2B.dta", clear
+	keep if Year == $YEAR	
+	drop if age1 == 0
+	collapse (sum) Pop, by(prov)
+	mkmat Pop
+	matrix POP2 = Pop[1..8,1]
+	matrix POP2 = POP2/$POPTOT 
+restore
+
+	* Rescale original weights to sum 1 (as required by maxentropy)
+sum aweight
+replace aweight = aweight/r(N) 
+  
+    * Create calibration matrices
+matrix MARGINS = POP1\POP2	
+
+    * Exlude one redundant dummy in the race*sex*age 
+drop D1_1_1_1
+matrix MARGINS = MARGINS[2..104,1]
+
+	* Recalibrate weights to MARGINS
+	* Simple calibration for SAGE 2007, SAGE 2014, SANHNES 2012, DHS 2016 (where sampling within the househodl was carried out) 
+	* With constant household weigth for NIDS, DHS 1998, DHS 2003 (which sampled only at the household level) 
+	
+	if (`s' == 7 | `s' == 8 | `s' == 10) {
+		maxentropy D1_* D2_*, gen(aweight_rec, replace) p(aweight) total($POPTOT) matrix(MARGINS) 
+	} 
+	else {
+		preserve 
+			bysort hhid: egen hhsize = count(hhid) 
+			gen hweight1 = hhsize*hweight
+			collapse (mean) hweight1 hhsize D1_* D2_*, by(hhid)
+			maxentropy D1_* D2_*, gen(hweight_rec, replace) p(hweight1) total($POPTOT) matrix(MARGINS)   
+			drop D1_* D2_* 
+			save "$TEMP/HWEIGHTS.dta", replace
+		restore
+		merge m:1 hhid using "$TEMP/HWEIGHTS.dta"
+		gen aweight_rec = hweight_rec/hhsize
+		drop hhsize  	
+	}
+
+    * Rescale original weights to sum to the population 	
+replace aweight = aweight * $POPTOT		
+	
+	* Delete temporary variables
+drop D1_* D2_* age1 race1   
+
+	* Save temporary
+save "$TEMP/TEMP_`s'.dta", replace
+}
+
+* 3: age cutpoints: 0 15 30 40 55 65 120
+
+use "$TEMP/PRECALIB.dta", clear 
+
+* Generate calibration variables
+egen age1 = cut(age), at(0 15 30 40 55 65 75 120) icodes
 gen race1 = race_imp
 replace race1 = 5 if race_imp == 9999 | race_imp>=.
 
@@ -337,12 +632,12 @@ save "$TEMP/BASE_CORE_1A.dta", replace
 
 * Loop over surveys 
 
-foreach s of numlist 1 2 4/11 {
+foreach s of numlist 3 8 {
 
 di "**************** Recalibrating weights: source = `s'"
 use "$TEMP/BASE_CORE_1A.dta", clear 
+di "`s'"
 keep if source == `s'								
-		
 	* Extract median year of data collection
 _pctile inty
 global YEAR = int(r(r1))
@@ -350,25 +645,34 @@ gen Year = $YEAR
   
 	* Read and pre-process population data - Create matrices of cell totals for reweighting
 preserve 
-	use "$AUX/Population/POP1.dta", clear
+	use "$AUX/Population/POP1C.dta", clear
 	keep if Year == $YEAR
 	drop if age1 == 0 
+	
+	replace Pop = Pop*2/5 if age == " 15 -19"    // Sage only target individual >= 18 years
+	
+	sum Pop if age1 > 1 | (age != " 15 -19")
+	global POPTOT18 = r(sum)
+	
 	collapse (sum) Pop, by(race sex age1)
 	mkmat Pop
 	matrix POP1 = Pop
 	sum Pop
 	global POPTOT = r(sum)
-	matrix POP1 = POP1/$POPTOT 
+	matrix POP1 = POP1/$POPTOT18 
 
-	use "$AUX/Population/POP2.dta", clear
+	use "$AUX/Population/POP2C.dta", clear
 	keep if Year == $YEAR	
 	drop if age1 == 0
+	
+	replace Pop = Pop*2/5 if age == " 15 -19"    // Sage only target individual >= 18 years
+		
 	collapse (sum) Pop, by(prov)
 	mkmat Pop
 	matrix POP2 = Pop[1..8,1]
-	matrix POP2 = POP2/$POPTOT 
+	matrix POP2 = POP2/$POPTOT18
+	
 restore
-
 	* Rescale original weights to sum 1 (as required by maxentropy)
 sum aweight
 replace aweight = aweight/r(N) 
@@ -384,15 +688,15 @@ matrix MARGINS = MARGINS[2..56,1]
 	* Simple calibration for SAGE 2007, SAGE 2014, SANHNES 2012, DHS 2016 (where sampling within the househodl was carried out) 
 	* With constant household weigth for NIDS, DHS 1998, DHS 2003 (which sampled only at the household level) 
 	
-	if (source == 7 | source == 8 | source == 10) {
-		maxentropy D1_* D2_*, gen(aweight_rec, replace) p(aweight) total($POPTOT) matrix(MARGINS)   
+	if (`s' == 7 | `s' == 8 | `s' == 10) {
+		maxentropy D1_* D2_*, gen(aweight_rec, replace) p(aweight) total($POPTOT18) matrix(MARGINS) 
 	} 
 	else {
 		preserve 
 			bysort hhid: egen hhsize = count(hhid) 
 			gen hweight1 = hhsize*hweight
 			collapse (mean) hweight1 hhsize D1_* D2_*, by(hhid)
-			maxentropy D1_* D2_*, gen(hweight_rec, replace) p(hweight1) total($POPTOT) matrix(MARGINS)   
+			maxentropy D1_* D2_*, gen(hweight_rec, replace) p(hweight1) total($POPTOT18) matrix(MARGINS)   
 			drop D1_* D2_* 
 			save "$TEMP/HWEIGHTS.dta", replace
 		restore
@@ -402,7 +706,7 @@ matrix MARGINS = MARGINS[2..56,1]
 	}
 
     * Rescale original weights to sum to the population 	
-replace aweight = aweight * $POPTOT		
+replace aweight = aweight * $POPTOT18		
 	
 	* Delete temporary variables
 drop D1_* D2_* age1 race1   
@@ -410,75 +714,6 @@ drop D1_* D2_* age1 race1
 	* Save temporary
 save "$TEMP/TEMP_`s'.dta", replace
 }
-
-* Treat SAGE2007 separately (because of empty categories)
-
-di "**************** Recalibrating weights: source = 3"
-use "$TEMP/BASE_CORE_1A.dta", clear 
-keep if source == 3								
-		
-	* Extract median year of data collection
-_pctile inty
-global YEAR = int(r(r1))
-gen Year = $YEAR  		
-  
-  * Generate calibration variables (broader age categories)
-egen age2 = cut(age), at(0 15 35 45 55 65 120) icodes
-
-	* Race-sex-age interaction
-drop D1_*
-foreach r of numlist 1(1)4 {
-   foreach s of numlist 1(1)2 {
-       foreach a of numlist 1(1)5 {
-         gen D1_`r'_`s'_`a'= race1==`r' & sex==`s' & age2==`a'
-     }
-   }
-}
-  
-	* Read and pre-process population data - Create matrices of cell totals for reweighting
-preserve 
-	use "$AUX/Population/POP1.dta", clear
-	keep if Year == $YEAR
-	drop if age1 == 0 
-	recode age1 (1/2=1)(3=2)(4=3)(5=4)(6=5), gen(age2)
-	collapse (sum) Pop, by(race sex age2)
-	mkmat Pop
-	matrix POP1 = Pop
-	sum Pop
-	global POPTOT = r(sum)
-	matrix POP1 = POP1/$POPTOT 
-
-	use "$AUX/Population/POP2.dta", clear
-	keep if Year == $YEAR	
-	drop if age1 == 0
-	collapse (sum) Pop, by(prov)
-	mkmat Pop
-	matrix POP2 = Pop[1..8,1]
-	matrix POP2 = POP2/$POPTOT 
-restore
-
-	* Rescale original weights to sum 1 (as required by maxentropy)
-sum aweight
-replace aweight = aweight/r(N) 
-  
-    * Create calibration matrices
-matrix MARGINS = POP1\POP2	
-
-    * Exlude one redundant dummy in the race*sex*age 
-drop D1_1_1_1
-matrix MARGINS = MARGINS[2..48,1]
-
-	* Recalibrate weights to MARGINS
-maxentropy D1_* D2_*, gen(aweight_rec, replace) p(aweight) total($POPTOT) matrix(MARGINS)   
-  
-    * Rescale original weights to sum to the population 	
-replace aweight = aweight * $POPTOT	
-  
-      * Delete temporary variables
-drop D1_* D2_* age1 race1 age2  
-
-	* Save temporary
-save "$TEMP/TEMP_3.dta", replace
 
 * Append datasets and delete temporary
 use "$TEMP/TEMP_1.dta", clear
@@ -492,6 +727,11 @@ erase "$TEMP/HWEIGHTS.dta"
 * Rename Year 
 rename Year year
 
+* Halve weights for 2012
+* Two surveys are considered in that year
+
+replace aweight_rec = aweight_rec/2 if year == 2012
+
 * Add temporary unique record id
 gen RID = _n
 
@@ -501,217 +741,6 @@ capture drop _*
 save "$TEMP/BASE_CORE_2A.dta", replace
 
 ******************************************************************************************************************************************************
-* RECALIBRATE WEIGHTS (2) : RISK SCORE COMPONENTS NOT MISSING                                                                                        * 
-******************************************************************************************************************************************************
-
-* Keep only cases with non-missing values in all risk scores components for age 30-74
-drop if currsmok >=. & (age>=40 & age <=80)
-drop if bpmed >=. & (age>=40 & age <=80)
-drop if bmi >=. & (age>=40 & age <=80)
-drop if sbp >=. & (age>=40 & age <=80)
-
-* Drop previous weights 
-drop aweight_rec 
-drop hweight1
-
-* Generate calibration variables
-egen age1 = cut(age), at(0 15 25 35 45 55 65 120) icodes
-gen race1 = race_imp
-replace race1 = 5 if race_imp == 9999 | race_imp>=.
-
-	* Race-sex-age interaction
-foreach r of numlist 1(1)4 {
-   foreach s of numlist 1(1)2 {
-       foreach a of numlist 1(1)6 {
-         gen D1_`r'_`s'_`a'= race1==`r' & sex==`s' & age1==`a'
-     }
-   }
-}
-
-	* Provinces
-foreach p of numlist 1(1)8 {
-         gen D2_`p'= prov==`p'
-     }
-	
-* Save intermediate dataset (1)
-label data "Intermediate (1)"
-save "$TEMP/BASE_CORE_1B.dta", replace
-
-* Loop over surveys 
-
-foreach s of numlist 1 2 4/11 {
-
-di "**************** Recalibrating weights: source = `s'"
-use "$TEMP/BASE_CORE_1B.dta", clear 
-keep if source == `s'								
-		
-	* Extract median year of data collection
-_pctile inty
-global YEAR = int(r(r1))
-gen Year = $YEAR  		
-  
-	* Read and pre-process population data - Create matrices of cell totals for reweighting
-preserve 
-	use "$AUX/Population/POP1.dta", clear
-	keep if Year == $YEAR
-	drop if age1 == 0 
-	collapse (sum) Pop, by(race sex age1)
-	mkmat Pop
-	matrix POP1 = Pop
-	sum Pop
-	global POPTOT = r(sum)
-	matrix POP1 = POP1/$POPTOT 
-
-	use "$AUX/Population/POP2.dta", clear
-	keep if Year == $YEAR	
-	drop if age1 == 0
-	collapse (sum) Pop, by(prov)
-	mkmat Pop
-	matrix POP2 = Pop[1..8,1]
-	matrix POP2 = POP2/$POPTOT 
-restore
-
-	* Rescale original weights to sum 1 (as required by maxentropy)
-sum aweight
-replace aweight = aweight/r(N) 
-  
-    * Create calibration matrices
-matrix MARGINS = POP1\POP2	
-
-    * Exlude one redundant dummy in the race*sex*age 
-drop D1_1_1_1
-matrix MARGINS = MARGINS[2..56,1]
-
-	* Recalibrate weights to MARGINS
-	* Simple calibration for SAGE 2007, SAGE 2014, SANHNES 2012, DHS 2016 (where sampling within the househodl was carried out) 
-	* With constant household weigth for NIDS, DHS 1998, DHS 2003 (which sampled only at the household level) 
-	
-	if (source == 7 | source == 8 | source == 10) {
-		maxentropy D1_* D2_*, gen(aweight_rec, replace) p(aweight) total($POPTOT) matrix(MARGINS)   
-	} 
-	else {
-		preserve 
-			bysort hhid: egen hhsize = count(hhid) 
-			gen hweight1 = hhsize*hweight
-			collapse (mean) hweight1 hhsize D1_* D2_*, by(hhid)
-			maxentropy D1_* D2_*, gen(hweight_rec, replace) p(hweight1) total($POPTOT) matrix(MARGINS)   
-			drop D1_* D2_* 
-			save "$TEMP/HWEIGHTS.dta", replace
-		restore
-		merge m:1 hhid using "$TEMP/HWEIGHTS.dta"
-		gen aweight_rec = hweight_rec/hhsize
-		drop hhsize  	
-	}
-
-    * Rescale original weights to sum to the population 	
-replace aweight = aweight * $POPTOT		
-	
-	* Delete temporary variables
-drop D1_* D2_* age1 race1   
-
-	* Save temporary
-save "$TEMP/TEMP_`s'.dta", replace
-}
-
-* Treat SAGE2007 separately (because of empty categories)
-
-di "**************** Recalibrating weights: source = 3"
-use "$TEMP/BASE_CORE_1B.dta", clear 
-keep if source == 3								
-		
-	* Extract median year of data collection
-_pctile inty
-global YEAR = int(r(r1))
-gen Year = $YEAR  		
-  
-  * Generate calibration variables (broader age categories)
-egen age2 = cut(age), at(0 15 35 45 55 65 120) icodes
-
-	* Race-sex-age interaction
-drop D1_*
-foreach r of numlist 1(1)4 {
-   foreach s of numlist 1(1)2 {
-       foreach a of numlist 1(1)5 {
-         gen D1_`r'_`s'_`a'= race1==`r' & sex==`s' & age2==`a'
-     }
-   }
-}
-  
-	* Read and pre-process population data - Create matrices of cell totals for reweighting
-preserve 
-	use "$AUX/Population/POP1.dta", clear
-	keep if Year == $YEAR
-	drop if age1 == 0 
-	recode age1 (1/2=1)(3=2)(4=3)(5=4)(6=5), gen(age2)
-	collapse (sum) Pop, by(race sex age2)
-	mkmat Pop
-	matrix POP1 = Pop
-	sum Pop
-	global POPTOT = r(sum)
-	matrix POP1 = POP1/$POPTOT 
-
-	use "$AUX/Population/POP2.dta", clear
-	keep if Year == $YEAR	
-	drop if age1 == 0
-	collapse (sum) Pop, by(prov)
-	mkmat Pop
-	matrix POP2 = Pop[1..8,1]
-	matrix POP2 = POP2/$POPTOT 
-restore
-
-	* Rescale original weights to sum 1 (as required by maxentropy)
-sum aweight
-replace aweight = aweight/r(N) 
-  
-    * Create calibration matrices
-matrix MARGINS = POP1\POP2	
-
-    * Exlude one redundant dummy in the race*sex*age 
-drop D1_1_1_1
-matrix MARGINS = MARGINS[2..48,1]
-
-	* Recalibrate weights to MARGINS
-maxentropy D1_* D2_*, gen(aweight_rec, replace) p(aweight) total($POPTOT) matrix(MARGINS)   
-  
-    * Rescale original weights to sum to the population 	
-replace aweight = aweight * $POPTOT	
-  
-      * Delete temporary variables
-drop D1_* D2_* age1 race1 age2  
-
-	* Save temporary
-save "$TEMP/TEMP_3.dta", replace
-
-* Append datasets and delete temporary
-use "$TEMP/TEMP_1.dta", clear
-erase "$TEMP/TEMP_1.dta"
-foreach s of numlist 2/11 {
-  append using "$TEMP/TEMP_`s'.dta"
-  erase "$TEMP/TEMP_`s'.dta"
-}
-erase "$TEMP/HWEIGHTS.dta"
-
-* Keep only new weights
-keep RID aweight_rec
-
-* Rename new weights
-rename  aweight_rec aweight_rec_risk
-
-* Save temporary
-save "$TEMP/RISKWEIGHT.dta", replace
-
-* Merge with previous
-use "$TEMP/BASE_CORE_2A.dta", clear
-merge 1:1 RID using "$TEMP/RISKWEIGHT.dta"
-erase "$TEMP/RISKWEIGHT.dta"
-
-* Save intermediate dataset (2)
-label data "Intermediate (2)"
-capture drop _*
-capture drop RID
-save "$TEMP/BASE_CORE_2B.dta", replace
-
-******************************************************************************************************************************************************
 * ASSET INDEX                                                                                                                                        * 
 ******************************************************************************************************************************************************
 
@@ -719,7 +748,7 @@ save "$TEMP/BASE_CORE_2B.dta", replace
 
 foreach s of numlist 1/7 9 10 11 {
 	di "**************** Calculating base asset index: source = `s'"	
-	use "$TEMP/BASE_CORE_2B.dta", clear 
+	use "$TEMP/BASE_CORE_2A.dta", clear 
 	keep if source == `s'						
 
 	* Asset index at household level, with multiple imputation to deal with missing data)
@@ -791,7 +820,7 @@ save "$TEMP/TEMP_`s'.dta", replace
 
 
 * Subset SAGE 2014 (no asset index)
-use "$TEMP/BASE_CORE_2B.dta", clear 
+use "$TEMP/BASE_CORE_2A.dta", clear 
 keep if source == 8	 
 	* Save temporary
 save "$TEMP/TEMP_8.dta", replace
@@ -966,7 +995,7 @@ capture drop _*
 save "$TEMP/BASE_CORE_4.dta", replace
 
 ******************************************************************************************************************************************************
-* OTHER DERIVED ANTHROPOMETRIC                                                                                                                       * 
+* OTHER DERIVED                                                                                                                                      * 
 ******************************************************************************************************************************************************
 
 egen sbp_mean2 = rowmean(sbp2 sbp3)
@@ -976,6 +1005,17 @@ egen rhr_mean2 = rowmean(rhr2 rhr3)
 rename sbp sbp_mean1
 rename dbp dbp_mean1
 rename rhr rhr_mean1
+
+recode age (15/19=1) (20/24=2) (25/29=3) (30/34=4) (35/39=5) (40/44=6) (45/49=7) (50/54=8) (55/59=9) (60/64=10)(65/69=11) (70/74=12)  ///
+             (75/79=13), gen(agecat1)
+replace agecat1=14 if age>=80
+replace agecat1=. if age==.
+label val agecat1 vagecat1
+ 
+recode age (16/19=1) (20/29=2) (30/39=3) (40/49=4) (50/59=5) (60/69=6) (70/79=7), gen(agecat2)
+replace agecat2=8 if age>=80
+replace agecat2=. if age==.
+label val agecat2 vagecat2
 
 ******************************************************************************************************************************************************
 * ADD WHO CVD RISK 2019 - Ref: Kaptoge et al, 2019 (Lancet Glob Health 2019; 7: e1332–45)                                                            * 
@@ -1248,6 +1288,8 @@ label var marstatus "Marital status"
 label var edu1 "Education (6 categories)"
 label var edu2 "Education (5 categories)"
 label var emp "Employment status"
+label var agecat1 "Age categories (5-year bands)"
+label var agecat2 "Age categories (10-year bands)"
 	* Lifestyle
 label var smokstatus "Smoking Status"
 label var currsmok "Current smoking"
@@ -1404,7 +1446,11 @@ label define vdwelling 1 "Structure (brick) on separate stand/yard" 2 "Tradition
 label def vsource 1 "DHS 1998" 2 "DHS 2003" 3 "SAGE 2007-8" 4 "NIDS 2008" 5 "NIDS 2010-11" 6 "NIDS 2012" 7 "SANHANES 2012" 8 "SAGE 2014"             ///
                   9 "NIDS 2014-15" 10 "DHS 2016" 11 "NIDS 2017"
 label define vbmicat 1 "Underweight" 2 "Healthy weight" 3 "Overweight" 4 "Obesity I" 5 "Obesity II" 6 "Obesity III"  7 "Obesity IV"  
- 
+
+label define vagecat1 1 "16-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45-49" 8 "50-54" 9 "55-59" 10 "60-64" 11 "65-69" 12 "70-74"  ///
+                      13 "75-79" 14 "80+" 
+label define vagecat2 1 "16-19" 2 "20-29" 3 "30-39" 4 "40-49" 5 "50-59" 6 "60-69" 7 "70-79" 8 "80+"  
+
 # delimit ;	
 label define vdist1996_name 
 7003 "Western Metropolitan Services Council"
@@ -1737,7 +1783,7 @@ order
 source 
 year
 hhid pid 
-psu stratum aweight aweight_rec hweight
+psu stratum aweight aweight_rec 
 prov* dist* geotype*
 intm inty
 hh_size hh_ownhome hh_totrooms hh_sleeprooms hh_ptotrooms hh_psleeprooms 
@@ -1751,7 +1797,7 @@ hh_income hh_income_quint
 hh_windex hh_windex_quint
 hh_cwi
 hh_deaths12mo 
-sex age race race_imp marstatus edu1 edu2 emp
+sex age agecat1 agecat2 race race_imp marstatus edu1 edu2 emp
 smokstatus currsmok alcstatus curralc alcavg gpaq gpaqcat exercise
 self_health diag_*
 bpmed diabmed cholmed ischmed lungmed tbmed strokemed
@@ -1777,8 +1823,8 @@ svyset psu [pweight=aweight_rec], strata(stratum) singleunit(certainty)
 ******************************************************************************************************************************************************
 
 * Label the datset
-label data "HARMONISED SOUTH AFRICA - Core Variables - $S_DATE"
+label data "EXPOSE SOUTH AFRICA - V. 1.0"
 
 * Save   
-save "$OUT/HARMONISED_SOUTH_AFRICA.dta", replace
+save "$OUT/EXPOSE_SA.dta", replace
 

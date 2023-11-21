@@ -2,7 +2,7 @@
 * EXPOSE - DATA EXTRACTION                                                                                                                           *
 * Study on global AGEing and adult health 2007 (SAGE 2007)                                                                                           *
 * Annibale Cois (acois@sun.ac.za) & Kafui Adjaye-Gbewonyo (k.adjayegbewonyo@greenwich.ac.uk) & Meseret Mamo (mesistar.mamo@gmail.com)                *
-* Version 1.0 - September 2022                                                                                                                       *
+* Version 1.0                                                                                                                                        *
 ******************************************************************************************************************************************************
 
 clear
@@ -71,7 +71,7 @@ label val dist2001 vdist2001
 * Socioeconomic
 rename q0401 hsize
 label var hsize "Household size"
-rename q0503 totrooms
+recode q0503 (-8=.), gen(totrooms)
 label var totrooms "Number of rooms"
 gen ntotrooms = hsize/totrooms 
 label var ntotrooms "People per room"
@@ -90,7 +90,8 @@ label val cookingfuel vcookingfuel
 recode q0501 (1=1)(2=0)(3=1)(4/7=0)(8/9=.), gen(ownhome)
 label var ownhome "Home owned by a household member" 
 label values ownhome vyesno
-gen hhincome = q0724/12
+recode q0724 (-8=.), gen(hhincome)
+replace hhincome = hhincome/12
 label var hhincome "Household monthly income"
 rename quintile_c hhincome_quint
 label var hhincome_quint "Household montly income quintile"
@@ -788,7 +789,7 @@ label drop _all
 * Label the datset
 label data "SAGE 2007 - Core Variables - $S_DATE"
 
-save "$OUT/SAGE2007.dta", replace
+save "$TEMP/SAGE2007.dta", replace
 erase "$TEMP/TEMP_1.dta"
 erase "$TEMP/TEMP_2.dta"
 erase "$TEMP/TEMP_3.dta"

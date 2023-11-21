@@ -1,8 +1,8 @@
 ******************************************************************************************************************************************************
 * EXPOSE - DATA EXTRACTION                                                                                                                           *
-* South Africa National Health And Nutrition Examination Survey 2003 (SANHANES 2012)                                                                 *
+* South Africa National Health And Nutrition Examination Survey 2012 (SANHANES 2012)                                                                 *
 * Annibale Cois (acois@sun.ac.za) & Kafui Adjaye-Gbewonyo (k.adjayegbewonyo@greenwich.ac.uk)                                                         *
-* Version 1.0 - September 2022                                                                                                                       *
+* Version 1.0                                                                                                                                        *
 ******************************************************************************************************************************************************
 
 clear
@@ -805,7 +805,7 @@ label drop _all
 label data "SANHANES 2012 - Core Variables - $S_DATE"
 
 * Save & erase temps  
-save "$OUT/SANHANES2012.dta", replace
+save "$TEMP/SANHANES2012.dta", replace
 erase "$TEMP/TEMP_1A.dta"
 erase "$TEMP/TEMP_1B.dta"
 erase "$TEMP/TEMP_2.dta"
