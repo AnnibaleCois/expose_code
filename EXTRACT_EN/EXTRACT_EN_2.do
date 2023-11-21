@@ -943,10 +943,10 @@ rename cal2_who_cvdx_m2 who2019_nonlab
 rename cal2_who_cvdx_m1 who2019_lab
 
 gen who_nonlab=who2019_nonlab
-replace who_nonlab=. if age2_2015est<40 | age2_2015est>74
+replace who_nonlab=. if age2_2015est<40 | age2_2015est>80
 
 gen who_lab= who2019_lab
-replace who_lab=. if age2_2015est<40 | age2_2015est>74
+replace who_lab=. if age2_2015est<40 | age2_2015est>80
 
 drop gbd* who2019_nonlab who2019_lab
 drop _WHO_START calyear _WHO_END _mergecal tchol sbp smallbin hxdiabbin
