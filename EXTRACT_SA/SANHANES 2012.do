@@ -110,7 +110,7 @@ use IQN vpno individual_questionnaire_number labresults_entryid clinical_entryid
     indv_wgt_answ_qstn_bench indv_wgt_answ_phys_bench indv_wgt_answ_lab_bench
     cholesterols_res_edited cholhdls_res ldl_chol 
 	triglycerideres_edited 
-	glycatededited1 hba1c_perc  
+	glycatededited1 gly  
 	HB_edited
 	using "$DATASET_2", clear;
 
@@ -118,7 +118,7 @@ order IQN vpno individual_questionnaire_number labresults_entryid clinical_entry
     indv_wgt_answ_qstn_bench indv_wgt_answ_phys_bench indv_wgt_answ_lab_bench
     cholesterols_res_edited cholhdls_res ldl_chol 
 	triglycerideres_edited 
-	glycatededited1 hba1c_perc  
+	glycatededited1 gly  
 	HB_edited; 	
 # delimit cr
 
@@ -556,7 +556,10 @@ rename ldl_chol chol_ldl
 label var chol_ldl "Ldl cholesterol [mmol/l]"
 rename triglycerideres_edited trig
 label var trig "Triglicerides [mmol/l]" 
-rename glycatededited1 HbA1c 
+
+*rename glycatededited1 HbA1c 
+gen HbA1c = 10.929 * (gly - 2.15)
+
 label var HbA1c "hb1ac [mmol/mol]"
 rename HB_edited hb
 label var hb "hb1ac [mmol/mol]"

@@ -15,55 +15,55 @@ set more off
 * LOCATION OF FILES AND FOLDERS                                                                                                                      *
 *                                                                                                                                                    *
 * [BASE DIRECTORY]                                                                                                                                   *
-* └ DHS                                                                                                                                              *                                                                                                                                                                                                                                                  
-* │   └ Datafiles                                                                                                                                    *
-* │ 	└ 	ZAHR31FL.dta                                                                                                                             * 
-* │         ZAAH33FL.dta                                                                                                                             *
-* │ 		hholdout.dta                                                                                                                             *
-* │ 		adultout.dta                                                                                                                             *
-* │      	personsout.dta                                                                                                                           *
-* │ 		ZAPR71FL.dta                                                                                                                             *
-* │  		ZAAHM71FL.dta                                                                                                                            *
-* │   		ZAAHW71FL.dta                                                                                                                            *
-* │  		ZAIR71FL.dta                                                                                                                             *
-* │    		ZAHR71FL.dta                                                                                                                             *
-* │                                                                                                                                                  *
-* └ NIDS                                                                                                                                             *
-* │   └ Datafiles                                                                                                                                    *
-* │       └ Adult_W1_Anon_V7.0.0.dta                                                                                                                 *
-* │   		Adult_W1_Anon_V7.0.0.dta                                                                                                                 *
-* │  		indderived_W1_Anon_V7.0.0.dta                                                                                                            *
-* │  		HHQuestionnaire_W1_Anon_V7.0.0.dta                                                                                                       *
-* │   		hhderived_W1_Anon_V7.0.0.dta                                                                                                             *
-* │  		HouseholdRoster_W1_Anon_V7.0.0.dta                                                                                                       *
-* │  		Adult_W2_Anon_V4.0.0.dta                                                                                                                 *         
-* │  		indderived_W2_Anon_V4.0.0.dta                                                                                                            *     
-* │  		HHQuestionnaire_W2_Anon_V4.0.0.dta                                                                                                       *
-* │  		hhderived_W2_Anon_V4.0.0.dta                                                                                                             *     
-* │  		Link_File_W2_Anon_V4.0.0.dta                                                                                                             *       
-* │ 		Adult_W3_Anon_V3.0.0.dta                                                                                                                 *           
-* │  		indderived_W3_Anon_V3.0.0.dta                                                                                                            *      
-* │  		HHQuestionnaire_W3_Anon_V3.0.0.dta                                                                                                       *
-* │  		hhderived_W3_Anon_V3.0.0.dta                                                                                                             *       
-* │  		Link_File_W3_Anon_V3.0.0.dta                                                                                                             *      
-* │  		Adult_W4_Anon_V2.0.0.dta                                                                                                                 *           
-* │ 		indderived_W4_Anon_V2.0.0.dta                                                                                                            *      
-* │  		HHQuestionnaire_W4_Anon_V2.0.0.dta                                                                                                       *
-* │ 		hhderived_W4_Anon_V2.0.0.dta                                                                                                             *       
-* │ 		Link_File_W4_Anon_V2.0.0.dta                                                                                                             *      
-* │  		Adult_W5_Anon_V1.0.0.dta                                                                                                                 *          
-* │  		indderived_W5_Anon_V1.0.0.dta                                                                                                            *   
-* │ 		HHQuestionnaire_W5_Anon_V1.0.0.dta                                                                                                       * 
-* │ 		hhderived_W5_Anon_V1.0.0.dta                                                                                                             *
-* │ 		Link_File_W5_Anon_V1.0.0.dta                                                                                                             * 
-* └ SAGE                                                                                                                                             *
-* │   └ Datafiles                                                                                                                                    *
-* │       └ SouthAfricaHHData.dta	                                                                                                                 *    
-* │  		SouthAfricaINDData.dta                                                                                                                   *         
-* │  		SouthAfricaINDDataW2.dta                                                                                                                 *
-* └ SANHANES                                                                                                                                         *
-*     └ Datafiles                                                                                                                                    *
-*         └ SANHANES Visiting point data_anon.dta                                                                                                    *  
+*      [DHS]                                                                                                                                         *                                                                                                                                                                                                                                                  
+*        [Datafiles]                                                                                                                                 *
+*  	 	 	ZAHR31FL.dta                                                                                                                             * 
+*        	ZAAH33FL.dta                                                                                                                             *
+*  		 	hholdout.dta                                                                                                                             *
+*  		 	adultout.dta                                                                                                                             *
+*        	personsout.dta                                                                                                                           *
+*  		 	ZAPR71FL.dta                                                                                                                             *
+*   	 	ZAAHM71FL.dta                                                                                                                            *
+*    	 	ZAAHW71FL.dta                                                                                                                            *
+*   	 	ZAIR71FL.dta                                                                                                                             *
+*     	 	ZAHR71FL.dta                                                                                                                             *
+*                                                                                                                                                    *
+*       [NIDS]                                                                                                                                       *
+*         [Datafiles]                                                                                                                                *
+*        	Adult_W1_Anon_V7.0.0.dta                                                                                                                 *
+*    		Adult_W1_Anon_V7.0.0.dta                                                                                                                 *
+*   		indderived_W1_Anon_V7.0.0.dta                                                                                                            *
+*   		HHQuestionnaire_W1_Anon_V7.0.0.dta                                                                                                       *
+*    		hhderived_W1_Anon_V7.0.0.dta                                                                                                             *
+*   		HouseholdRoster_W1_Anon_V7.0.0.dta                                                                                                       *
+*   		Adult_W2_Anon_V4.0.0.dta                                                                                                                 *         
+*   		indderived_W2_Anon_V4.0.0.dta                                                                                                            *     
+*   		HHQuestionnaire_W2_Anon_V4.0.0.dta                                                                                                       *
+*   		hhderived_W2_Anon_V4.0.0.dta                                                                                                             *     
+*   		Link_File_W2_Anon_V4.0.0.dta                                                                                                             *       
+*  			Adult_W3_Anon_V3.0.0.dta                                                                                                                 *           
+*   		indderived_W3_Anon_V3.0.0.dta                                                                                                            *      
+*   		HHQuestionnaire_W3_Anon_V3.0.0.dta                                                                                                       *
+*   		hhderived_W3_Anon_V3.0.0.dta                                                                                                             *       
+*   		Link_File_W3_Anon_V3.0.0.dta                                                                                                             *      
+*   		Adult_W4_Anon_V2.0.0.dta                                                                                                                 *           
+*  			indderived_W4_Anon_V2.0.0.dta                                                                                                            *      
+*   		HHQuestionnaire_W4_Anon_V2.0.0.dta                                                                                                       *
+*  			hhderived_W4_Anon_V2.0.0.dta                                                                                                             *       
+*  			Link_File_W4_Anon_V2.0.0.dta                                                                                                             *      
+*   		Adult_W5_Anon_V1.0.0.dta                                                                                                                 *          
+*   		indderived_W5_Anon_V1.0.0.dta                                                                                                            *   
+*  			HHQuestionnaire_W5_Anon_V1.0.0.dta                                                                                                       * 
+*  			hhderived_W5_Anon_V1.0.0.dta                                                                                                             *
+*  			Link_File_W5_Anon_V1.0.0.dta                                                                                                             * 
+*       [SAGE]                                                                                                                                       *
+*         [Datafiles]                                                                                                                                *
+*         	SouthAfricaHHData.dta	                                                                                                                 *    
+*   		SouthAfricaINDData.dta                                                                                                                   *         
+*   		SouthAfricaINDDataW2.dta                                                                                                                 *
+*       [SANHANES]                                                                                                                                   *
+*         [Datafiles]                                                                                                                                *
+*           SANHANES Visiting point data_anon.dta                                                                                                    *  
 *  		    SANHANES Individual clinical_anonymised.dta	                                                                                             *
 *   		SANHANES_WB_NEW_all_anonymised.dta                                                                                                       *  	
 *    		SANHANES2011_12_Adult_Exam.csv                                                                                                           *
@@ -71,7 +71,9 @@ set more off
 ******************************************************************************************************************************************************
 
 * BASE DATA DIRECTORY 
-global BASEDIR "********************"      // Insert here the path of the base directory 
+*global BASEDIR "********************"      // Insert here the path of the base directory 
+*global BASEDIR "C:/Users/acois/Stellenbosch University/ExPoSE - Documents/General/Data"
+global BASEDIR "C:/Users/User/OneDrive - Stellenbosch University/General - ExPoSE/Data"
 
 * OUTPUT DIRECTORY
 global OUT "./OUT"
@@ -1012,13 +1014,13 @@ replace agecat1=14 if age>=80
 replace agecat1=. if age==.
 label val agecat1 vagecat1
  
-recode age (16/19=1) (20/29=2) (30/39=3) (40/49=4) (50/59=5) (60/69=6) (70/79=7), gen(agecat2)
+recode age (15/19=1) (20/29=2) (30/39=3) (40/49=4) (50/59=5) (60/69=6) (70/79=7), gen(agecat2)
 replace agecat2=8 if age>=80
 replace agecat2=. if age==.
 label val agecat2 vagecat2
 
 ******************************************************************************************************************************************************
-* ADD WHO CVD RISK 2019 - Ref: Kaptoge et al, 2019 (Lancet Glob Health 2019; 7: e1332–45)                                                            * 
+* ADD WHO CVD RISK 2019 - Ref: Kaptoge et al, 2019 (Lancet Glob Health 2019; 7: e1332-45)                                                            * 
 ******************************************************************************************************************************************************
 
 gen ccode = "ZAF"
@@ -1447,9 +1449,9 @@ label def vsource 1 "DHS 1998" 2 "DHS 2003" 3 "SAGE 2007-8" 4 "NIDS 2008" 5 "NID
                   9 "NIDS 2014-15" 10 "DHS 2016" 11 "NIDS 2017"
 label define vbmicat 1 "Underweight" 2 "Healthy weight" 3 "Overweight" 4 "Obesity I" 5 "Obesity II" 6 "Obesity III"  7 "Obesity IV"  
 
-label define vagecat1 1 "16-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45-49" 8 "50-54" 9 "55-59" 10 "60-64" 11 "65-69" 12 "70-74"  ///
+label define vagecat1 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45-49" 8 "50-54" 9 "55-59" 10 "60-64" 11 "65-69" 12 "70-74"  ///
                       13 "75-79" 14 "80+" 
-label define vagecat2 1 "16-19" 2 "20-29" 3 "30-39" 4 "40-49" 5 "50-59" 6 "60-69" 7 "70-79" 8 "80+"  
+label define vagecat2 1 "15-19" 2 "20-29" 3 "30-39" 4 "40-49" 5 "50-59" 6 "60-69" 7 "70-79" 8 "80+" 
 
 # delimit ;	
 label define vdist1996_name 

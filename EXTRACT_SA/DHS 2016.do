@@ -293,8 +293,10 @@ recode shmhba1c shwhba1c (90000/. =.)
 egen hb = rowtotal(ha56 hb56), missing
 replace hb = hb/10
 label var hb "Haemoglobin [g/dl]"
-egen HbA1c  = rowtotal(shmhba1c shwhba1c), missing
-replace HbA1c = 10.93*HbA1c/1000 - 22.5
+
+egen HbA1c  = rowtotal(shmhba1c shwhba1c), missing   // Unadjusted HbA1c in % (*1000)
+replace HbA1c  = (HbA1c/1000 - 0.228)/0.9866         // Adjusted HbA1c in %
+replace HbA1c = 10.929*(HbA1c - 2.15)                // Adjusted HbA1c in mmol/l
 label var HbA1c "hb1ac [mmol/mol]"
 
 * Reproductive health
