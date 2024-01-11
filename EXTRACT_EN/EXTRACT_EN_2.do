@@ -967,10 +967,22 @@ label define vsource 12 "HSE"
 label val source vsource
 	 
 ******************************************************************************************************************************************************
-* ORDER                                                                                                                                              * 
+* STRIP VALUE LABELS FROM NUMERICAL VARIABLES                                                                                                        * 
 ******************************************************************************************************************************************************
 
-# delimit ;
+# delimit ;	 
+label values pid psu stratum aweight_int_cvd aweight_nonlab_cvd aweight_lab_cvd aweight_int aweight_nonlab aweight_lab intm vism inty hh_size   
+             hh_income hh_income_eq ghq12scr age height weight waist1 waist2 waist3 waist hip1 hip2 hip3 hip sbp1 sbp2 sbp3 sbp_mean2 sbp_mean1  
+			 dbp1 dbp2 dbp3 dbp_mean2 dbp_mean1 rhr1 rhr2 rhr3 rhr_mean1 rhr_mean2 airtemp bmi glyhb_h HbA1c chol_tot chol_hdl ages who_nonlab 
+			 who_lab .
+;
+# delimit cr
+	 
+******************************************************************************************************************************************************
+* ORDER                                                                                                                                              * 
+******************************************************************************************************************************************************
+ 
+# delimit ;	 
 order 
 source 
 year
@@ -1010,5 +1022,5 @@ svyset psu [pweight=aweight_int], strata(stratum) singleunit(certainty)
 label data "EXPOSE ENGLAND - V. 1.0"
 
 * Save   
-save "$OUT/EXPOSE_EN.dta", replace
+save "$OUT/EXPOSE_EN1.dta", replace
 
