@@ -700,25 +700,6 @@ replace agecat2=. if age==.
 label val agecat2 vagecat2
 
 ******************************************************************************************************************************************************
-* ADD WHO CVD RISK 2019 - Ref: Kaptoge et al, 2019 (Lancet Glob Health 2019; 7: e1332-45)                                                            * 
-******************************************************************************************************************************************************
-
-gen ccode = "ZAF"
-clonevar ages = age
-clonevar hxdiabbin = diag_diab
-clonevar smallbin = currsmok
-clonevar tchol = chol_tot
-clonevar sbp = sbp_mean2
-whocvdrisk
-
-rename cal2_who_cvdx_m1 who_lab
-rename cal2_who_cvdx_m2 who_nonlab
-replace who_lab = . if age <40 | age > 80
-replace who_nonlab = . if age <40 | age > 80
-replace who_lab = who_lab*100
-replace who_nonlab = who_nonlab*100
- 
-******************************************************************************************************************************************************
 * DROP UNUSED VARIABLES                                                                                                                              * 
 ******************************************************************************************************************************************************
 
@@ -1070,9 +1051,6 @@ label var ohcare1mo_pri~e "Outpatient healthcare last month: private hospital/cl
 label var hcare1mo_chem~e "Healthcare last month: chemist/pharmacist/nurse"
 label var hcare1mo_trad "Healthcare last month: traditional/faith healer"
 label var hcare1mo_other "Healthcare last month: other"
-     * Risk scores
-label var who_nonlab "WHO cvd risk score: laboratory"
-label var who_lab "WHO cvd risk score: non-laboratory"	 
 
 ******************************************************************************************************************************************************
 * VALUE LABELS                                                                                                                                       * 
@@ -1490,7 +1468,6 @@ bmi bmicat
 hb HbA1c chol_tot chol_hdl chol_ldl trig
 medaid 
 hcare12mo hcare1mo hcare1mo_public hcare1mo_private ohcare1mo ohcare1mo_public ohcare1mo_private hcare1mo_chem_nurse hcare1mo_trad hcare1mo_other
-who_nonlab who_lab
 ;
 # delimit cr
 
