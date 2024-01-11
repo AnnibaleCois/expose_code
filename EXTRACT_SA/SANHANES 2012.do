@@ -542,8 +542,8 @@ label var psu "Primary Sampling Unit"
 gen stratum = prov2001
 label var stratum "Stratum"
 rename indv_wgt_answ_qstn_bench aweight            // Questionnaire weights 
-*rename indv_wgt_answ_phys_bench_new aweight       // Physical examination weights
-*rename indv_wgt_answ_lab_bench_new aweight        // Laboratory weights
+rename indv_wgt_answ_phys_bench_new aweight_phys       // Physical examination weights
+rename indv_wgt_answ_lab_bench_new aweight_lab        // Laboratory weights
 label var aweight "Sampling weight - Adult Questionnaire"
 
 * Biomarkers
@@ -659,7 +659,7 @@ gen w_SANHANES2012_ass_cellphone = ass_cellphone
 * Select variables
 # delimit ;
 keep                                                                                                                       
-prov2001 psu age sex geotype4 hhid hsize edu1 edu2 intm sleeprooms refuseremoved aweight hweight chol_tot chol_hdl chol_ldl trig HbA1c hb weight1 height1 
+prov2001 psu age sex geotype4 hhid hsize edu1 edu2 intm sleeprooms refuseremoved aweight aweight_phys aweight_lab hweight chol_tot chol_hdl chol_ldl trig HbA1c hb weight1 height1 
 height2 height3 waist1 waist2 waist3 arm1 arm2 arm3 hip1 hip2 hip3 sbp1 sbp2 sbp3 dbp1 dbp2 dbp3 rhr1 rhr2 rhr3 race emp cookingfuel heatingfuel 
 ass_fridge ass_stove ass_vacuum ass_wmachine ass_computer ass_sat ass_video ass_car_truck ass_tv ass_radio ass_phone ass_cellphone roof_wall_1 
 roof_wall_2 roof_wall_3 roof_wall_4 roof_wall_5 roof_wall_9999 water toilet sharedtoilet foodinsec self_health diag_hbp diag_stroke diag_isch  

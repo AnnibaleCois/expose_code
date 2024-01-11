@@ -297,6 +297,11 @@ drop asthmed emphmed
 
 rename asthmed_coded lungmed_coded
 
+* replace aweigjht_phys and aweight_lab with aweight for all surveys excluded SANHNANES
+
+replace aweight_phys = aweight if source != 7
+replace aweight_lab = aweight if source != 7
+
 ******************************************************************************************************************************************************
 * ENSURE UNIQUE NUMBERING OF HHIDs, CLUSTERs AND STRATA ACROSS DATASETS                                                                              * 
 * ENSURE UNIQUE PID NUMBER FOR UNIQUE INDIVIDUALS                                                                                                    *
@@ -703,10 +708,9 @@ label val agecat2 vagecat2
 * DROP UNUSED VARIABLES                                                                                                                              * 
 ******************************************************************************************************************************************************
 
-drop ccode ages hxdiabbin smallbin tchol sbp _WHO_START calyear gbdreg gbdregid countryid _mergecal _WHO_END
 drop intd ass_donkey_horse ass_sheep_cattle ass_livestock ass_elestv ass_gasstv ass_parstv ass_sheep_cattle_nc ass_donkey_horse_nc 
-drop alcbing alcf alcq hweight_rec main_place
-drop ea_code hhid2 hweight1 income mdist1996 municipality prov qdist qeanum sub_place 
+drop alcbing alcf alcq main_place
+drop ea_code hhid2 income mdist1996 municipality prov qdist qeanum sub_place 
 drop wallmaterial2 floormaterial2
 drop housedeaths2
 drop heartmed
@@ -828,8 +832,9 @@ label var hhid "Household unique identifier"
 label var pid "Individual unique identifier"
 label var psu "Primary Sampling Unit"
 label var stratum "Stratum"
-label var aweight "Sampling weight - Adult"
-label var aweight_rec "Sampling weight - Adult, recalibrated"
+label var aweight "Sampling weight - Interview"
+label var aweight_phys "Sampling weight - Physical examination"
+label var aweight_lab "Sampling weight - Laboratory"
 
 * Geographic
 label var prov1996_name "Province - 1996 boundaries"
@@ -1443,7 +1448,7 @@ order
 source 
 year
 hhid pid 
-psu stratum aweight aweight_rec 
+psu stratum aweight aweight_phys aweight_lab 
 prov* dist* geotype*
 intm inty
 hh_size hh_ownhome hh_totrooms hh_sleeprooms hh_ptotrooms hh_psleeprooms 
@@ -1475,7 +1480,7 @@ hcare12mo hcare1mo hcare1mo_public hcare1mo_private ohcare1mo ohcare1mo_public o
 * SURVEY SETTINGS                                                                                                                                    * 
 ******************************************************************************************************************************************************
 
-svyset psu [pweight=aweight_rec], strata(stratum) singleunit(certainty)
+svyset psu [pweight=aweight], strata(stratum) singleunit(certainty)
 
 ******************************************************************************************************************************************************
 * CONSOLIDATE & SAVE                                                                                                                                 * 
