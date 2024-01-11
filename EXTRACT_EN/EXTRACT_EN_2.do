@@ -928,29 +928,6 @@ replace diag_nerve=. if year==2015
 replace hh_income=. if year==2015
 replace hh_income_eq=. if year==2015
  
-*Calculating WHO CVD Risk Score
-
-gen ccode = "GBR"
-clonevar ages = age2_2015est
-clonevar hxdiabbin = diag_diab
-clonevar smallbin = currsmok
-clonevar tchol = chol_tot
-clonevar sbp = sbp_mean2
-whocvdrisk, percent
-
-rename cal2_who_cvdx_m2 who2019_nonlab
-
-rename cal2_who_cvdx_m1 who2019_lab
-
-gen who_nonlab=who2019_nonlab
-replace who_nonlab=. if age2_2015est<40 | age2_2015est>80
-
-gen who_lab= who2019_lab
-replace who_lab=. if age2_2015est<40 | age2_2015est>80
-
-drop gbd* who2019_nonlab who2019_lab
-drop _WHO_START calyear _WHO_END _mergecal tchol sbp smallbin hxdiabbin
- 
 ******************************************************************************************************************************************************
 * SUBSETTING, RENAMING, ADDITIONAL DERIVED                                                                                                           * 
 ******************************************************************************************************************************************************
@@ -973,8 +950,7 @@ label val source vsource
 # delimit ;	 
 label values pid psu stratum aweight_int_cvd aweight_nonlab_cvd aweight_lab_cvd aweight_int aweight_nonlab aweight_lab intm vism inty hh_size   
              hh_income hh_income_eq ghq12scr age height weight waist1 waist2 waist3 waist hip1 hip2 hip3 hip sbp1 sbp2 sbp3 sbp_mean2 sbp_mean1  
-			 dbp1 dbp2 dbp3 dbp_mean2 dbp_mean1 rhr1 rhr2 rhr3 rhr_mean1 rhr_mean2 airtemp bmi glyhb_h HbA1c chol_tot chol_hdl ages who_nonlab 
-			 who_lab .
+			 dbp1 dbp2 dbp3 dbp_mean2 dbp_mean1 rhr1 rhr2 rhr3 rhr_mean1 rhr_mean2 airtemp bmi glyhb_h HbA1c chol_tot chol_hdl ages .
 ;
 # delimit cr
 	 
@@ -1004,7 +980,6 @@ height* weight* waist* arm* hip* sbp* dbp* rhr* airtemp
 bmi bmicat
 glyhb_h HbA1c chol_tot chol_hdl 
 hcare1mo hcare12mo ihcare12mo
-who_nonlab who_lab
 ;
 # delimit cr
 
@@ -1022,5 +997,5 @@ svyset psu [pweight=aweight_int], strata(stratum) singleunit(certainty)
 label data "EXPOSE ENGLAND - V. 1.0"
 
 * Save   
-save "$OUT/EXPOSE_EN1.dta", replace
+save "$OUT/EXPOSE_EN.dta", replace
 
