@@ -4,7 +4,7 @@
 * INPUT: Datafiles for SADHS1998, SADHS2003, SADHS2016, NIDS wave 1-5, SAGE 2007, SAGE 2014, SANHNANES2012                                           *
 * OUTPUT: Consolidated, harmonised EXPOSE SOUTH AFRICA DATASET (EXPOSE_SA.dta)                                                                       *
 *                                                                                                                                                    *
-* Annibale Cois (acois@sun.ac.za)                                                                                                                    *
+* Annibale Cois (annible.cois@mrc.ac.za)                                                                                                             *
 * Version 1.0                                                                                                                                        *
 ******************************************************************************************************************************************************
 
@@ -15,58 +15,58 @@ set more off
 * LOCATION OF FILES AND FOLDERS                                                                                                                      *
 *                                                                                                                                                    *
 * [BASE DIRECTORY]                                                                                                                                   *
-*      [DHS]                                                                                                                                         *                                                                                                                                                                                                                                                  
+*      [DHS]                                                                                                                                         *          
 *        [Datafiles]                                                                                                                                 *
-*  	 	 	ZAHR31FL.dta                                                                                                                             * 
-*        	ZAAH33FL.dta                                                                                                                             *
-*  		 	hholdout.dta                                                                                                                             *
-*  		 	adultout.dta                                                                                                                             *
-*        	personsout.dta                                                                                                                           *
-*  		 	ZAPR71FL.dta                                                                                                                             *
-*   	 	ZAAHM71FL.dta                                                                                                                            *
-*    	 	ZAAHW71FL.dta                                                                                                                            *
-*   	 	ZAIR71FL.dta                                                                                                                             *
-*     	 	ZAHR71FL.dta                                                                                                                             *
+*  	 	 	ZAHR31FL.dta                                                                                                                                 * 
+*        	ZAAH33FL.dta                                                                                                                               *
+*  		 	hholdout.dta                                                                                                                                 *
+*  		 	adultout.dta                                                                                                                                 *
+*        	personsout.dta                                                                                                                             *
+*  		 	ZAPR71FL.dta                                                                                                                                 *
+*   	 	ZAAHM71FL.dta                                                                                                                                *
+*    	 	ZAAHW71FL.dta                                                                                                                                *
+*   	 	ZAIR71FL.dta                                                                                                                                 *
+*     	 	ZAHR71FL.dta                                                                                                                               *
 *                                                                                                                                                    *
 *       [NIDS]                                                                                                                                       *
 *         [Datafiles]                                                                                                                                *
-*        	Adult_W1_Anon_V7.0.0.dta                                                                                                                 *
-*    		Adult_W1_Anon_V7.0.0.dta                                                                                                                 *
-*   		indderived_W1_Anon_V7.0.0.dta                                                                                                            *
-*   		HHQuestionnaire_W1_Anon_V7.0.0.dta                                                                                                       *
-*    		hhderived_W1_Anon_V7.0.0.dta                                                                                                             *
-*   		HouseholdRoster_W1_Anon_V7.0.0.dta                                                                                                       *
-*   		Adult_W2_Anon_V4.0.0.dta                                                                                                                 *         
-*   		indderived_W2_Anon_V4.0.0.dta                                                                                                            *     
-*   		HHQuestionnaire_W2_Anon_V4.0.0.dta                                                                                                       *
-*   		hhderived_W2_Anon_V4.0.0.dta                                                                                                             *     
-*   		Link_File_W2_Anon_V4.0.0.dta                                                                                                             *       
-*  			Adult_W3_Anon_V3.0.0.dta                                                                                                                 *           
-*   		indderived_W3_Anon_V3.0.0.dta                                                                                                            *      
-*   		HHQuestionnaire_W3_Anon_V3.0.0.dta                                                                                                       *
-*   		hhderived_W3_Anon_V3.0.0.dta                                                                                                             *       
-*   		Link_File_W3_Anon_V3.0.0.dta                                                                                                             *      
-*   		Adult_W4_Anon_V2.0.0.dta                                                                                                                 *           
-*  			indderived_W4_Anon_V2.0.0.dta                                                                                                            *      
-*   		HHQuestionnaire_W4_Anon_V2.0.0.dta                                                                                                       *
-*  			hhderived_W4_Anon_V2.0.0.dta                                                                                                             *       
-*  			Link_File_W4_Anon_V2.0.0.dta                                                                                                             *      
-*   		Adult_W5_Anon_V1.0.0.dta                                                                                                                 *          
-*   		indderived_W5_Anon_V1.0.0.dta                                                                                                            *   
-*  			HHQuestionnaire_W5_Anon_V1.0.0.dta                                                                                                       * 
-*  			hhderived_W5_Anon_V1.0.0.dta                                                                                                             *
-*  			Link_File_W5_Anon_V1.0.0.dta                                                                                                             * 
+*        	Adult_W1_Anon_V7.0.0.dta                                                                                                                   *
+*    		Adult_W1_Anon_V7.0.0.dta                                                                                                                     *
+*   		indderived_W1_Anon_V7.0.0.dta                                                                                                                *
+*   		HHQuestionnaire_W1_Anon_V7.0.0.dta                                                                                                           *
+*    		hhderived_W1_Anon_V7.0.0.dta                                                                                                                 *
+*   		HouseholdRoster_W1_Anon_V7.0.0.dta                                                                                                           *
+*   		Adult_W2_Anon_V4.0.0.dta                                                                                                                     *         
+*   		indderived_W2_Anon_V4.0.0.dta                                                                                                                *     
+*   		HHQuestionnaire_W2_Anon_V4.0.0.dta                                                                                                           *
+*   		hhderived_W2_Anon_V4.0.0.dta                                                                                                                 *     
+*   		Link_File_W2_Anon_V4.0.0.dta                                                                                                                 *       
+*  			Adult_W3_Anon_V3.0.0.dta                                                                                                                     *           
+*   		indderived_W3_Anon_V3.0.0.dta                                                                                                                *      
+*   		HHQuestionnaire_W3_Anon_V3.0.0.dta                                                                                                           *
+*   		hhderived_W3_Anon_V3.0.0.dta                                                                                                                 *       
+*   		Link_File_W3_Anon_V3.0.0.dta                                                                                                                 *      
+*   		Adult_W4_Anon_V2.0.0.dta                                                                                                                     *           
+*  			indderived_W4_Anon_V2.0.0.dta                                                                                                                *      
+*   		HHQuestionnaire_W4_Anon_V2.0.0.dta                                                                                                           *
+*  			hhderived_W4_Anon_V2.0.0.dta                                                                                                                 *       
+*  			Link_File_W4_Anon_V2.0.0.dta                                                                                                                 *      
+*   		Adult_W5_Anon_V1.0.0.dta                                                                                                                     *          
+*   		indderived_W5_Anon_V1.0.0.dta                                                                                                                *   
+*  			HHQuestionnaire_W5_Anon_V1.0.0.dta                                                                                                           * 
+*  			hhderived_W5_Anon_V1.0.0.dta                                                                                                                 *
+*  			Link_File_W5_Anon_V1.0.0.dta                                                                                                                 * 
 *       [SAGE]                                                                                                                                       *
 *         [Datafiles]                                                                                                                                *
-*         	SouthAfricaHHData.dta	                                                                                                                 *    
-*   		SouthAfricaINDData.dta                                                                                                                   *         
-*   		SouthAfricaINDDataW2.dta                                                                                                                 *
+*         	SouthAfricaHHData.dta	                                                                                                                   *    
+*   		SouthAfricaINDData.dta                                                                                                                       *         
+*   		SouthAfricaINDDataW2.dta                                                                                                                     *
 *       [SANHANES]                                                                                                                                   *
 *         [Datafiles]                                                                                                                                *
 *           SANHANES Visiting point data_anon.dta                                                                                                    *  
-*  		    SANHANES Individual clinical_anonymised.dta	                                                                                             *
-*   		SANHANES_WB_NEW_all_anonymised.dta                                                                                                       *  	
-*    		SANHANES2011_12_Adult_Exam.csv                                                                                                           *
+*  		    SANHANES Individual clinical_anonymised.dta	                                                                                               *
+*   		SANHANES_WB_NEW_all_anonymised.dta                                                                                                           *  	
+*    		SANHANES2011_12_Adult_Exam.csv                                                                                                               *
 *                                                                                                                                                    *
 ******************************************************************************************************************************************************
 
