@@ -5,7 +5,7 @@
 * OUTPUT: Consolidated, harmonised EXPOSE ENGLAND DATASET (EXPOSE_EN.dta)                                                                            *
 *                                                                                                                                                    *
 * Kafui Adjaye-Gbewonyo (k.adjayegbewonyo@greenwich.ac.uk)                                                                                           *
-* Version 1.0                                                                                                                                        *
+* Version 1.1                                                                                                                                        *
 ******************************************************************************************************************************************************
 
 clear
@@ -16,7 +16,7 @@ set more off
 ******************************************************************************************************************************************************
 
 * BASE DATA DIRECTORY 
-global BASEDIR "********************"      // Insert here the path of the base directory which containg the HSE1998-2017.dta dataset 
+global BASEDIR "G:\My Drive\Work\MRC\Projects\Current\HealthTransitions\Analyses\code\0 - EXTRACT_EN"      // Insert here the path of the base directory which containg the HSE1998-2017.dta dataset 
 
 * OUTPUT DIRECTORY
 global OUT "./OUT"
@@ -25,7 +25,7 @@ global OUT "./OUT"
 * LOAD DATA                                                                                                                                          * 
 ******************************************************************************************************************************************************
 
-use "$BASEDIR/HSE1998-2017.dta", clear 
+use "$BASEDIR/HSE1998-2017_15102024 v2.dta", clear 
 
 ******************************************************************************************************************************************************
 * DEFINE LABELS                                                                                                                                      * 
@@ -204,6 +204,7 @@ rename wt_nurse aweight_nonlab
 label var aweight_nonlab "Sampling weight - Adult non-lab risk score"
 
 replace wt_blood=. if wt_blood==0
+replace wt_blood=wt_bldEL if year==2005 & age_h>64
 rename wt_blood aweight_lab
 label var aweight_lab "Sampling weight - Adult lab risk score"
 
@@ -528,8 +529,8 @@ replace chol_tot=. if chol_hdl>chol_tot & chol_hdl !=.
 
 *HbA1c
 replace glyhb_h=. if glyhb_h<2.5 | glyhb_h>25
-gen HbA1c=10.93*glyhb_h-23.5 /*Converting percent to mmol/mol for pre 2012*/
-label var HbA1c "hb1ac [mmol/mol]"
+gen hbA1c=10.93*glyhb_h-23.5 /*Converting percent to mmol/mol for pre 2012*/
+label var hbA1c "Hb1Ac [mmol/mol]"
 
 replace glyhb2_h=. if glyhb2_h<0
 drop iffcvala IFCCA1 glyhbval glyhbvala GlyHb
@@ -904,13 +905,9 @@ drop ill12m* ILL12m illsm* longill limitill limlast totinc
 
 drop a30t06c year_s id2_s bpmedd bpmedd2 dnnow dnany dnevr
 
-save "C:\Users\user\OneDrive - University of Greenwich\Research\ESRC SDAI\England data\HSE1998-2017 recode7.dta", replace
-
 *Excluding cases
 
 drop if geolevel1==.
-
-save "C:\Users\user\OneDrive - University of Greenwich\Research\ESRC SDAI\England data\HSE1998-2017 recode7.dta", replace
 
 *For restricted data:
 
@@ -931,12 +928,11 @@ replace hh_income_eq=. if year==2015
 ******************************************************************************************************************************************************
 * SUBSETTING, RENAMING, ADDITIONAL DERIVED                                                                                                           * 
 ******************************************************************************************************************************************************
-rename exercisefreq_e exercisefreq
-rename ages age
+gen age = round(age_h,1.0)
 
 drop hid wt_int_s1 wt_int_s2 wt_nurse_s1 wt_nurse_s2 wt_blood_s1 wt_blood_s2 age_h hh_imd_quint sclass_h porftvg totalwug totalwu diag_hbp_h  ///
      diag_stroke_h diag_angi_h diag_mi_h diag_diab_h diag_isch_h murmur1 ihdis cvdis murdoc pill3 bpmedd_h bpmedc_h medheart ag16g10 glyhb2_h  ///
-	 wt_intEL wt_nurEL wt_bldEL age2_2015est id2 time countryid insulin diabtype ccode
+	 wt_intEL wt_nurEL wt_bldEL age2_2015est id2 time insulin diabtype age_h
 
 gen source = 12	 
 label var source "Source Dataset"
@@ -950,7 +946,7 @@ label val source vsource
 # delimit ;	 
 label values pid psu stratum aweight_int_cvd aweight_nonlab_cvd aweight_lab_cvd aweight_int aweight_nonlab aweight_lab intm vism inty hh_size   
              hh_income hh_income_eq ghq12scr age height weight waist1 waist2 waist3 waist hip1 hip2 hip3 hip sbp1 sbp2 sbp3 sbp_mean2 sbp_mean1  
-			 dbp1 dbp2 dbp3 dbp_mean2 dbp_mean1 rhr1 rhr2 rhr3 rhr_mean1 rhr_mean2 airtemp bmi glyhb_h HbA1c chol_tot chol_hdl ages .
+			 dbp1 dbp2 dbp3 dbp_mean2 dbp_mean1 rhr1 rhr2 rhr3 rhr_mean1 rhr_mean2 airtemp bmi glyhb_h hbA1c chol_tot chol_hdl .
 ;
 # delimit cr
 	 
@@ -972,13 +968,13 @@ hh_ass_car_truck hh_carnum
 hh_income hh_income_eq hh_income_quint
 ghq12scr
 sex age agecat1 agecat2 race_e race_e2 race_eb marstatus edu_e occupation emp
-smokstatus currsmok alcstatus curralc alcmax fruitveg exercisefreq
+smokstatus currsmok alcstatus curralc alcmax fruitveg exercisefreq_e
 self_health diag*
 bpmed bpmed_coded diabmed heartmed heartmed2 cholmed contraceptives 
 currpreg 
-height* weight* waist* arm* hip* sbp* dbp* rhr* airtemp
+height* weight* waist* hip* sbp* dbp* rhr* airtemp
 bmi bmicat
-glyhb_h HbA1c chol_tot chol_hdl 
+glyhb_h hbA1c chol_tot chol_hdl 
 hcare1mo hcare12mo ihcare12mo
 ;
 # delimit cr
@@ -994,7 +990,7 @@ svyset psu [pweight=aweight_int], strata(stratum) singleunit(certainty)
 ******************************************************************************************************************************************************
 
 * Label the datset
-label data "EXPOSE ENGLAND - V. 1.0"
+label data "EXPOSE ENGLAND - V. 1.1"
 
 * Save   
 save "$OUT/EXPOSE_EN.dta", replace

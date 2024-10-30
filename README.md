@@ -17,8 +17,9 @@ The harmonisation code for the South African datasets (in Stata<sup>TM</sup> for
 The main file is EXTRACT_SA.do, which includes instructions on how to set-up the directory structure for the input data. The subfolder AUXILIARY includes 
 geographic and demographic information needed to complete the process. The subfolders TEMP and OUT are initially empty and are used by the code to store intermediate and final results, respectively. 
 </p>
-<p>
+<p style = 'margin:12px; text-align: justify;'>
 The R file CONSOLIDATE.R imports the South African and English extracted data, reorders and renames the variables consistently, calculates cardiovascular risk scores for individuals aged 40 to 74 years (Globorisk, WHO and Framingham) and recalibrates sampling weights for the South African dataset. 
+</p>
 <br/>
 <h3> The ExPoSE project was funded by:</h3><img src="img/UKRI.png" all = "UKRI-ESRC Logo" width="400"/>
 

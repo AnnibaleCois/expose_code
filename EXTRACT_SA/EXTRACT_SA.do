@@ -5,7 +5,7 @@
 * OUTPUT: Consolidated, harmonised EXPOSE SOUTH AFRICA DATASET (EXPOSE_SA.dta)                                                                       *
 *                                                                                                                                                    *
 * Annibale Cois (acois@sun.ac.za)                                                                                                                    *
-* Version 1.0                                                                                                                                        *
+* Version 1.1                                                                                                                                        *
 ******************************************************************************************************************************************************
 
 clear
@@ -71,7 +71,8 @@ set more off
 ******************************************************************************************************************************************************
 
 * BASE DATA DIRECTORY 
-global BASEDIR "********************"      // Insert here the path of the base directory 
+*global BASEDIR "********************"      // Insert here the path of the base directory 
+global BASEDIR "C:/Users/acois/Stellenbosch University/ExPoSE - Documents/General/Data"
 
 * OUTPUT DIRECTORY
 global OUT "./OUT"
@@ -119,11 +120,11 @@ global BMI_MAX = 131
 global HBA1C_MIN = 3.5
 global HBA1C_MAX = 200
 
-global CHOLTOT_MIN = 0.1
-global CHOLTOT_MAX = 16
+global CHOLTOT_MIN = 1.75
+global CHOLTOT_MAX = 20
 
-global CHOLHDL_MIN = 0.1
-global CHOLHDL_MAX = 16
+global CHOLHDL_MIN = 0.4
+global CHOLHDL_MAX = 5
 
 global CHOLLDL_MIN = 0.1
 global CHOLLDL_MAX = 16
@@ -231,6 +232,13 @@ replace hb=. if hb<$HB_MIN | hb>$HB_MAX
 replace HbA1c=. if hb<$HBA1C_MIN | HbA1c>$HBA1C_MAX
 replace chol_tot=. if chol_tot<$CHOLTOT_MIN | chol_tot>$CHOLTOT_MAX
 replace chol_hdl=. if chol_hdl<$CHOLHDL_MIN | chol_hdl>$CHOLHDL_MAX
+
+gen impdiff = 0
+replace impdiff = 1 if (chol_tot < . & chol_hdl <.) & (chol_tot < chol_hdl) 
+replace chol_tot = . if impdiff == 1
+replace chol_hdl = . if impdiff == 1
+drop impdiff
+
 replace chol_ldl=. if chol_ldl<$CHOLLDL_MIN | chol_ldl>$CHOLLDL_MAX
 replace trig=. if trig<$TRIG_MIN | trig>$TRIG_MAX
 		
@@ -1485,7 +1493,7 @@ svyset psu [pweight=aweight], strata(stratum) singleunit(certainty)
 ******************************************************************************************************************************************************
 
 * Label the datset
-label data "EXPOSE SOUTH AFRICA - V. 1.0"
+label data "EXPOSE SOUTH AFRICA - V. 1.1"
 
 * Save   
 save "$OUT/EXPOSE_SA.dta", replace

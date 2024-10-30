@@ -6,7 +6,7 @@
 * OUTPUT: Harmonised HSE1998-2017 datsets (Stata format, input to EXTRACT_EN_2 do file)                                                              *.
 *                                                                                                                                                    *.
 * Shaun Scholes (s.scholes@ucl.ac.uk)                                                                                                                *.
-* Version 1.0 (17/11/2023)                                                                                                                           *.
+* Version 1.1 (23/10/2024)                                                                                                                           *.
 ******************************************************************************************************************************************************.
 
 ******************************************************************************************************************************************************.
@@ -37,18 +37,18 @@
 *                                                                                                                                                    *.
 ******************************************************************************************************************************************************.
 
+
 ************************.
 *1998.
 ************************.
 
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse98ai.sav'.
+dataset close all.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse98ai.sav'.
 missing values all ().
 exe.
 sel if age>=16.
 EXECUTE.
 cro/tables = workactg by active.
-
 rename variables (noutpat inpatnt = outpat inpat).
 exe.
 **Household id.
@@ -259,6 +259,11 @@ compute benefit9=srcinc09.
 exe.
 
 *Use of services.
+*base for whendoc.
+
+temp.
+sel if (ndoctalk=2)|(ndoctalk=1 & (whsbhlf1<>1) & (whsbhlf2<>1)).
+fre whendoc.
 
 *talk to GP in last last month.
 compute docmonth=-2.
@@ -269,7 +274,16 @@ if (ndoctalk=2) & whendoc=1 docmonth=1.
 if (ndoctalk=2) & any(whendoc,2,3,4,5,6) docmonth=0.
 variable label docmonth "Talk to GP in last month".
 value labels docmonth 0 "No" 1 "Yes".
-*whether using (for those ever taken).
+
+*4929 (women: age 16-49: pregnowb).
+*4223 (women: age 16-49: Nurse: pregntj).
+
+*ever taken (8164).
+fre pillevr.
+
+*whether using (for those ever taken): 5198.
+fre pilluse.
+cro/tables = pillevr by pilluse.
 compute pill3=-2.
 if (pillevr=2) pill3=1.
 if (pillevr=1) & (pilluse=2) pill3=2.
@@ -280,13 +294,15 @@ val labels pill3
     2 "Taken not current"
     3 "Current".
 exe.
+fre pill3.
+
 *Anthropometry.
 compute bmival2=bmival.
 compute wtval2=wtval.
 EXECUTE.
 
 *BP.
-*Dinamap to Omron.
+* Dinamap to Omron.
 DO IF bprespc=1 & age>=16.
 compute sys1om=(sys1*0.91)+8.90.
 compute sys2om=(sys2*0.91)+8.90.
@@ -302,47 +318,79 @@ compute highbp=hyper140.
 VALUE LABELS highbp 1 'Normotensive untreated' 2 'Normotensive treated' 3 'Hypertensive treated' 4 'Hypertensive untreated'.
 exe.
 
-*Taking drugs prescribed for high BP in the last 7 days (bpmedd).
-*Taking drugs affecting in the last 7 days (bpmedc).
+*Taking drugs prescribed for high BP in the last 7 days.
+*fre bpmedd.
+
+*Taking drugs affecting in the last 7 days.
+*fre bpmedc.
+
+*recode using medcnjd.
+*cro/tables = bpmedd by medcnjd.
+*cro/tables = bpmedc by medcnjd.
+
 compute bpmedd_h=-2.
 if (bpmedd=0)|(medcnjd=2) bpmedd_h=0.
 if (bpmedd=1) bpmedd_h=1.
 val labels bpmedd_h 0 "not on BP med" 1 "on BP med".
 exe.
+
 compute bpmedc_h=-2.
 if (bpmedc=0)|(medcnjd=2) bpmedc_h=0.
 if (bpmedc=1) bpmedc_h=1.
 val labels bpmedc_h 0 "not on BP med" 1 "on BP med".
 exe.
+
 *Lipid.
+*cro/tables = lipid by medcnjd.
 compute lipid_h=-2.
 if (lipid=0)|(medcnjd=2) lipid_h=0.
 if (lipid=1) lipid_h=1.
 val labels lipid_h 0 "not on lipid" 1 "lipid".
+
 *Cholest includes lld.
 compute raised=-2.
 if range(cholest,0,4.9) raised=0.
 if cholest>4.9 raised=1.
 exe.
+
 compute cholval13=cholest.
 EXECUTE.
+
+TEMPORARY.
+sel if cholval13>=0.
+fre lipid medcnjd.
+
+TEMPORARY.
+sel if hdlchol>=0.
+fre lipid medcnjd.
+
 compute hdlval1a = hdlchol.
 exe.
     
 *switch missing values on.
+
 missing values bprespc sys1om sys2om sys3om omsysval hyper140 highbp diabete2 cigsta3 (-9 thru -1).
+
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
 VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
 
+temp.
+sel if CVD_Risk=1.
+desc var sex age cigsta3 bmival2 highbp diabete2/stats=min max mean.
 
 *medcnjd: includes contraceptives.
 *medcnj: excludes contraceptives.
+cro/tables = medtyp1 by medcnjd.
+cro/tables = medtyp1 by medcnj.
+
 compute medtyp1_h=-2.
 if (medcnj=2) medtyp1_h=0.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
+fre medtyp1_h.
+
 compute year=1998.
 EXECUTE.
 compute id=pserial.
@@ -355,8 +403,10 @@ compute wt_nurse=1.
 EXECUTE.
 compute wt_blood=1.
 EXECUTE.
+
 compute psu99=area.
 EXECUTE.
+
 FORMAT psu99 (F4).
 EXE.
 string areastr (a4).
@@ -374,6 +424,7 @@ compute age_h=age.
 exe.
 
 *Diagnosed BP (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everbp docnurbp.
 compute diag_hbp_h=-99.
 if everbp=2|docnurbp=2 diag_hbp_h=0.
 if everbp=1 & (docnurbp=1) diag_hbp_h=1.
@@ -381,6 +432,7 @@ value labels diag_hbp_h 0 "No" 1 "Yes".
 fre diag_hbp_h.
 
 *Diagnosed stroke (missing not coded as no).
+fre everstro docstro.
 compute diag_stroke_h=-99.
 if everstro=2|docstro=2 diag_stroke_h=0.
 if everstro=1 & (docstro=1) diag_stroke_h=1.
@@ -388,6 +440,7 @@ value labels diag_stroke_h 0 "No" 1 "Yes".
 fre diag_stroke_h.
 
 *Diagnosed angina (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everangi docangi.
 compute diag_angi_h=-99.
 if everangi=2|docangi=2 diag_angi_h=0.
 if everangi=1 & (docangi=1) diag_angi_h=1.
@@ -395,6 +448,7 @@ value labels diag_angi_h 0 "No" 1 "Yes".
 fre diag_angi_h.   
 
 *Diagnosed MI (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everhart docheart.
 compute diag_mi_h=-99.
 if everhart=2|docheart=2 diag_mi_h=0.
 if everhart=1 & (docheart=1) diag_mi_h=1.
@@ -402,6 +456,7 @@ value labels diag_mi_h 0 "No" 1 "Yes".
 fre diag_mi_h.  
 
 *Diagnosed diabetes (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everdi docinfo1.
 compute diag_diab_h=-99.
 if everdi=2|docinfo1=2 diag_diab_h=0.
 if everdi=1 & (docinfo1=1) diag_diab_h=1.
@@ -414,10 +469,11 @@ if (diag_mi_h=0 & diag_angi_h=0) diag_isch_h=0.
 if (diag_mi_h=1 | diag_angi_h=1) diag_isch_h=1.
 value labels diag_isch_h 0 "No" 1 "Yes".
 fre diag_isch_h. 
+
 compute dimed_h = medcindi.
 exe.
 
-save outfile = "TEMP\HSE1998RF.sav"
+save outfile = "N:\Temp\HSE1998RF.sav"
 /keep hid id year sex age age_h ag16g10 gor cigsta3 wt_int wt_nurse wt_blood point1 diabete2 topqual3 
 nuroutc genhelf genhelf2
 longill limitill highbp omsysval omdiaval cholval13 raised
@@ -448,13 +504,27 @@ outpat inpat dnnow dnany dnevr
 pulse1 pulse2 pulse3.
 
 
+*************************.
+*2000 (no diabetes).
+***********************.
+
+*dataset close all.
+*GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse00ai.sav'.
+*missing values all ().
+*exe.
+*sel if age>=16.
+*EXECUTE.
+*fre samptype diabete2.
+*TEMPORARY.
+*sel if samptype=2. 
+*fre diabete2.
 
 ****************.
 *2001.
 ****************.
 
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse01ai.sav'.
+dataset close all.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse01ai.sav'.
 missing values all ().
 exe.
 sel if age>=16.
@@ -474,6 +544,7 @@ compute wt_nurse=1.
 EXECUTE.
 compute wt_blood=1.
 EXECUTE.
+
 compute qrtint=-99.
 if any(mintb,1,2,3) qrtint=1.
 if any(mintb,4,5,6) qrtint=2.
@@ -483,6 +554,7 @@ EXECUTE.
 variable label qrtint "Quarter of Interview".
 value labels qrtint 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
 exe.
+
 compute qrtnvis=-99.
 if any(vismon,1,2,3) qrtnvis=1.
 if any(vismon,4,5,6) qrtnvis=2.
@@ -502,6 +574,7 @@ if marital=5 mstatus_h=5.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
 
+
 *ethnic group.
 compute origin5=-2.
 if (ethnici=1) origin5=1.
@@ -517,7 +590,6 @@ value labels origin5
 5 "Any other".
 missing values origin5 (-2).
 exe.
-
 compute gor=-2.
 if gora="A" gor=1.
 if gora="B" gor=2.
@@ -539,14 +611,16 @@ if any(urban,1,2) urban_b=1.
 if urban=3 urban_b=0.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
-*Benefits.
+fre urban_b.
+cro/tables = urban by urban_b.
+
 compute benefit1=srcinc05.
 compute benefit4=srcinc06.
 compute benefit5=srcinc07.
 compute benefit7=srcinc08.
 compute benefit9=srcinc09.
 exe.
-*Social class.
+
 compute sclass_h=-2.
 if sclass=1 sclass_h=1.
 if sclass=2 sclass_h=2.
@@ -555,13 +629,15 @@ if sclass=4 sclass_h=4.
 if sclass=5 sclass_h=5.
 if sclass=6 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
+cro/tables = sclass by sclass_h.
 
-*Alcohol.
+
 compute d7many3=d7many.
 if any(2,dnany,d7day) d7many3=0.
 if dnoft2=8 d7many3=0.
 variable labels d7many3 "(D) Number of days drank in last week, including none".
 EXE.
+
 **dnewutg.
 recode d7unit (0 thru 2=1) (2 thru 3=2) (3 thru 4=3) (4 thru 5=4) (5 thru 6=5) (6 thru 8=6) (8 thru hi=7) (else=copy) into dnewutg.
 variable label dnewutg "(D) ADJUSTED FOR WINE GLASSES - units drunk on heaviest day in last 7 (grouped)".
@@ -575,7 +651,10 @@ value labels dnewutg
  7 "Over 8+".
 exe.
 missing values dnewutg (-1).
-exe.
+
+
+*freq dnewunit d7unit dnewutg d7unitg.
+
 compute wdrink=-5.
 DO if sex=2.
 recode d7unit (6.01 thru hi=3)(3.01 thru 6=2)(0 thru 3=1)(else=copy) into wdrink.
@@ -589,6 +668,7 @@ value labels wdrink
 2 'greater than 3 and less than or equal to 6 units'
 3 'great than 6 units'.
 execute.
+
 compute mdrink=-5.
 DO if sex=1.
 recode d7unit (8.01 thru hi=3)(4.01 thru 8=2)(0 thru 4=1)(else=copy) into mdrink.
@@ -602,6 +682,7 @@ value labels mdrink
 2 'greater than 4 and less than or equal to 8 units'
 3 'great than 8 units'.
 execute.
+
 missing values mdrink wdrink ().
 COMPUTE alclimit2=-1. 
 if (mdrink=0) alclimit2=0.
@@ -621,11 +702,19 @@ VAL LAB alclimit2
 1 '<=4 units/day (men), <=3 (women)' 
 2 '>4 and <= 8 (men), >3 and less than or equal to 6 (women)'
 3 'greater than 8 units (men), greater than 6 units (women)'.
+
 missing values alclimit2 (-9 thru -1).
 rename variables (alclimit2=alclimit07b).
 exe.
 
+*base for whendoc.
+
+temp.
+sel if (ndoctalk=2)|(ndoctalk=1 & (whsbhlf1<>1) & (whsbhlf2<>1)).
+fre whendoc.
+
 *talk to GP in last last month.
+
 compute docmonth=-2.
 if (ndoctalk=1) & (whendoc<0) docmonth=1.
 if (ndoctalk=1) & (whendoc=1) docmonth=1.
@@ -634,7 +723,10 @@ if (ndoctalk=2) & whendoc=1 docmonth=1.
 if (ndoctalk=2) & any(whendoc,2,3,4,5,6) docmonth=0.
 variable label docmonth "Talk to GP in last month".
 value labels docmonth 0 "No" 1 "Yes".
-exe.
+fre docmonth.
+
+cro/tables = pillevr by pilluse.
+
 compute pill3=-2.
 if (pillevr=2) pill3=1.
 if (pillevr=1) & (pilluse=2) pill3=2.
@@ -645,23 +737,37 @@ val labels pill3
     2 "Taken not current"
     3 "Current".
 exe.
+fre pill3.
+
+
 compute bmival2=bmival.
 compute wtval2=wtval.
 exe.
+
+*Taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd.
+
+*Taking drugs affecting in the last 7 days.
+fre bpmedc.
+
+*recode using medcnjd.
+cro/tables = bpmedd by medcnjd.
+cro/tables = bpmedc by medcnjd.
 
 compute bpmedd_h=-2.
 if (bpmedd=0)|(medcnjd=2) bpmedd_h=0.
 if (bpmedd=1) bpmedd_h=1.
 val labels bpmedd_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedd_h.
 
 compute bpmedc_h=-2.
 if (bpmedc=0)|(medcnjd=2) bpmedc_h=0.
 if (bpmedc=1) bpmedc_h=1.
 val labels bpmedc_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedc_h.
 
-*Dinamap to Omron.
+
+* Dinamap to Omron.
 DO IF bprespc=1 & age>=16.
 compute sys1om=(sys1*0.91)+8.90.
 compute sys2om=(sys2*0.91)+8.90.
@@ -673,19 +779,31 @@ compute omsysval=(sysval*0.91)+8.90.
 compute omdiaval=(newdiast*0.73)+19.78.
 end if.
 EXECUTE.
+fre hyper140.
 compute highbp=hyper140.
 VALUE LABELS highbp 1 'Normotensive untreated' 2 'Normotensive treated' 3 'Hypertensive treated' 4 'Hypertensive untreated'.
-exe.
+fre highbp.
+cro/tables = hyper140 by bpmedd.
+
+*Lipid.
+cro/tables = lipid by medcnjd.
+
 compute lipid_h=-2.
 if (lipid=0)|(medcnjd=2) lipid_h=0.
 if (lipid=1) lipid_h=1.
 val labels lipid_h 0 "not on lipid" 1 "lipid".
+fre lipid_h.
+
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
+fre medtyp1_h.
+
 compute psu99=area.
 EXECUTE.
+
 FORMAT psu99 (F4).
 EXE.
 string areastr (a4).
@@ -701,8 +819,10 @@ COMPUTE point1 = CONCAT(year1,areastr).
 EXECUTE.
 compute age_h=age.
 exe.
+
 compute year=2001.
-save outfile = "TEMP\HSE2001RF.sav"
+exe.
+save outfile = "N:\Temp\HSE2001RF.sav"
     /keep id year age age_h ag16g10 sex hid yintb mintb vismon gor nimd imd_h wt_int wt_nurse wt_blood point1 nuroutc hhsize marital mstatus_h origin5
     sclass sclass_h topqual3 tenureb urban_b car numcars benefit1 benefit4 benefit5 benefit7 benefit9
     cigsta3 alclimit07b genhelf longill limitill 
@@ -720,11 +840,11 @@ medcnjd dnnow dnany dnevr pulse1 pulse2 pulse3.
 
 
 ****************.
-*2002.
+*2002 (core only).
 ****************.
 
 dataset close all.
-GET FILE='BASE_DIRECTORY\hse02ai.sav'.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse02ai.sav'.
 missing values all ().
 exe.
 sel if age>=16.
@@ -746,6 +866,7 @@ compute wt_nurse=1.
 EXECUTE.
 compute wt_blood=1.
 EXECUTE.
+
 compute qrtint=-99.
 if any(mintb,1,2,3) qrtint=1.
 if any(mintb,4,5,6) qrtint=2.
@@ -755,6 +876,7 @@ EXECUTE.
 variable label qrtint "Quarter of Interview".
 value labels qrtint 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
 exe.
+
 compute qrtnvis=-99.
 if any(vismon,1,2,3) qrtnvis=1.
 if any(vismon,4,5,6) qrtnvis=2.
@@ -763,9 +885,11 @@ if any(vismon,10,11,12) qrtnvis=4.
 EXECUTE.
 variable label qrtnvis "Quarter of Nurse visit".
 value labels qrtnvis 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
-exe.
+fre qrtint qrtnvis.
+
 rename variables (gor=gora).
 exe.
+
 compute gor=-2.
 if gora="A" gor=1.
 if gora="B" gor=2.
@@ -780,7 +904,14 @@ exe.
 formats gor(F8.2).
 exe.
 
+*base for whendoc.
+
+temp.
+sel if (ndoctalk=2)|(ndoctalk=1 & (whsbhlf1<>1) & (whsbhlf2<>1)).
+fre whendoc.
+
 *talk to GP in last last month.
+
 compute docmonth=-2.
 if (ndoctalk=1) & (whendoc<0) docmonth=1.
 if (ndoctalk=1) & (whendoc=1) docmonth=1.
@@ -789,21 +920,27 @@ if (ndoctalk=2) & whendoc=1 docmonth=1.
 if (ndoctalk=2) & any(whendoc,2,3,4,5,6) docmonth=0.
 variable label docmonth "Talk to GP in last month".
 value labels docmonth 0 "No" 1 "Yes".
+fre docmonth.
+
 compute imd_h=nimd.
 formats imd_h(F8.2).
 exe.
+
 compute urban_b=-2.
 if any(urban,1,2) urban_b=1.
 if urban=3 urban_b=0.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
-exe.
+fre urban_b.
+cro/tables = urban by urban_b.
+
 compute benefit1=srcinc05.
 compute benefit4=srcinc06.
 compute benefit5=srcinc07.
 compute benefit7=srcinc08.
 compute benefit9=srcinc09.
 EXECUTE.
+
 compute mstatus_h=-2.
 if marstatb=1 mstatus_h=1.
 if marstatb=2 mstatus_h=2.
@@ -813,7 +950,8 @@ if marstatb=5 mstatus_h=5.
 if marstatb=6 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
-*minority ethnic group.
+cro/tables = marstatb by mstatus_h.
+
 compute origin5=-2.
 if (ethnici=1) origin5=1.
 if (ethnici=2) origin5=4.
@@ -828,7 +966,7 @@ value labels origin5
 5 "Any other".
 missing values origin5 (-2).
 exe.
-*social class.
+
 compute sclass_h=-2.
 if sclass=1 sclass_h=1.
 if sclass=2 sclass_h=2.
@@ -837,12 +975,14 @@ if sclass=4 sclass_h=4.
 if sclass=5 sclass_h=5.
 if sclass=6 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
-*alcohol.
+cro/tables = sclass by sclass_h.
+
 compute d7many3=d7many.
 if any(2,dnany,d7day) d7many3=0.
 if dnoft2=8 d7many3=0.
 variable labels d7many3 "(D) Number of days drank in last week, including none".
 EXE.
+
 **dnewutg.
 recode d7unit (0 thru 2=1) (2 thru 3=2) (3 thru 4=3) (4 thru 5=4) (5 thru 6=5) (6 thru 8=6) (8 thru hi=7) (else=copy) into dnewutg.
 variable label dnewutg "(D) ADJUSTED FOR WINE GLASSES - units drunk on heaviest day in last 7 (grouped)".
@@ -856,7 +996,9 @@ value labels dnewutg
  7 "Over 8+".
 exe.
 missing values dnewutg (-1).
-exe.
+
+*freq dnewunit d7unit dnewutg d7unitg.
+
 compute wdrink=-5.
 DO if sex=2.
 recode d7unit (6.01 thru hi=3)(3.01 thru 6=2)(0 thru 3=1)(else=copy) into wdrink.
@@ -870,6 +1012,7 @@ value labels wdrink
 2 'greater than 3 and less than or equal to 6 units'
 3 'great than 6 units'.
 execute.
+
 compute mdrink=-5.
 DO if sex=1.
 recode d7unit (8.01 thru hi=3)(4.01 thru 8=2)(0 thru 4=1)(else=copy) into mdrink.
@@ -883,6 +1026,7 @@ value labels mdrink
 2 'greater than 4 and less than or equal to 8 units'
 3 'great than 8 units'.
 execute.
+
 missing values mdrink wdrink ().
 COMPUTE alclimit2=-1. 
 if (mdrink=0) alclimit2=0.
@@ -902,9 +1046,13 @@ VAL LAB alclimit2
 1 '<=4 units/day (men), <=3 (women)' 
 2 '>4 and <= 8 (men), >3 and less than or equal to 6 (women)'
 3 'greater than 8 units (men), greater than 6 units (women)'.
+
 missing values alclimit2 (-9 thru -1).
 rename variables (alclimit2=alclimit07b).
 exe.
+
+cro/tables = pillevr by pilluse.
+
 compute pill3=-2.
 if (pillevr=2) pill3=1.
 if (pillevr=1) & (pilluse=2) pill3=2.
@@ -915,22 +1063,35 @@ val labels pill3
     2 "Taken not current"
     3 "Current".
 exe.
+fre pill3.
+
 compute bmival2=bmival.
 compute wtval2=wtval.
 EXECUTE.
+
+*Taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd.
+
+*Taking drugs affecting in the last 7 days.
+fre bpmedc.
+
+*recode using medcnjd.
+cro/tables = bpmedd by medcnjd.
+cro/tables = bpmedc by medcnjd.
 
 compute bpmedd_h=-2.
 if (bpmedd=0)|(medcnjd=2) bpmedd_h=0.
 if (bpmedd=1) bpmedd_h=1.
 val labels bpmedd_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedd_h.
+
 compute bpmedc_h=-2.
 if (bpmedc=0)|(medcnjd=2) bpmedc_h=0.
 if (bpmedc=1) bpmedc_h=1.
 val labels bpmedc_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedc_h.
 
-*Dinamap to Omron.
+* Dinamap to Omron.
 DO IF bprespc=1 & age>=16.
 compute sys1om=(sys1*0.91)+8.90.
 compute sys2om=(sys2*0.91)+8.90.
@@ -942,20 +1103,31 @@ compute omsysval=(sysval*0.91)+8.90.
 compute omdiaval=(newdiast*0.73)+19.78.
 end if.
 EXECUTE.
+fre hyper140.
 compute highbp=hyper140.
 VALUE LABELS highbp 1 'Normotensive untreated' 2 'Normotensive treated' 3 'Hypertensive treated' 4 'Hypertensive untreated'.
-*lipid.
+fre highbp.
+cro/tables = hyper140 by bpmedd.
+
+*Lipid.
+cro/tables = lipid by medcnjd.
+
 compute lipid_h=-2.
 if (lipid=0)|(medcnjd=2) lipid_h=0.
 if (lipid=1) lipid_h=1.
 val labels lipid_h 0 "not on lipid" 1 "lipid".
+fre lipid_h.
+
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
-exe.
+fre medtyp1_h.
+
 compute psu99=area.
 EXECUTE.
+
 FORMAT psu99 (F4).
 EXE.
 string areastr (a4).
@@ -972,7 +1144,7 @@ EXECUTE.
 compute age_h=age.
 exe.
 compute year=2002.
-save outfile = "TEMP\HSE2002RF.sav"
+save outfile = "N:\Temp\HSE2002RF.sav"
     /keep id year age age_h ag16g10 sex hid yintb mintb vismon gor ndoctalk whendoc docmonth pregntj
     wt_int wt_nurse wt_blood point1 imd_h hhsize sclass sclass_h tenureb urban_b
     car numcars benefit1 benefit4 benefit5 benefit7 benefit9 mstatus_h origin5
@@ -988,17 +1160,17 @@ omsysval omdiaval highbp
 bpmedd bpmedc bpmedd_h bpmedc_h airtemp pillevr pilluse pill3 area porftvg lipid lipid_h
 medtyp1 medtyp1_h ghq12scr qrtint qrtnvis medcnjd dnnow dnany dnevr nuroutc pulse1 pulse2 pulse3.
 
-
-***********.
+***********
 *2003.
-***********.
+***********
 
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse03ai.sav'.
+dataset close all.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse03ai.sav'.
 missing values all ().
 exe.
 select if age>=16.
 EXECUTE.
+cro/tables = workactg by active.
 **Household id.
 compute hid=hserial.
 EXECUTE.
@@ -1010,6 +1182,7 @@ formats id(F10.0).
 exe.
 formats gor(F8.2).
 exe.
+
 compute qrtint=-99.
 if any(mintb,1,2,3) qrtint=1.
 if any(mintb,4,5,6) qrtint=2.
@@ -1019,6 +1192,7 @@ EXECUTE.
 variable label qrtint "Quarter of Interview".
 value labels qrtint 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
 exe.
+
 compute qrtnvis=-99.
 if any(vismon,1,2,3) qrtnvis=1.
 if any(vismon,4,5,6) qrtnvis=2.
@@ -1027,11 +1201,14 @@ if any(vismon,10,11,12) qrtnvis=4.
 EXECUTE.
 variable label qrtnvis "Quarter of Nurse visit".
 value labels qrtnvis 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
-exe.
+fre qrtint qrtnvis.
+
+
 compute imd_h=imd2004.
 formats imd_h(F8.2).
 exe.
-*marital status.
+
+
 compute mstatus_h=-2.
 if marstatb=1 mstatus_h=1.
 if marstatb=2 mstatus_h=2.
@@ -1041,9 +1218,10 @@ if marstatb=5 mstatus_h=5.
 if marstatb=6 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
-exe.
+cro/tables = marstatb by mstatus_h.
 
-*urban.
+*create binary urban_b from 8 urindew.
+
 compute urban_b=-2.
 if urindew="2"  urban_b=0.
 if urindew="3"  urban_b=0.
@@ -1055,7 +1233,10 @@ if urindew="1"  urban_b=1.
 if urindew="5"  urban_b=1.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
-exe.
+cro/tables = urban by urban_b.
+fre urban_b.
+
+*string (a3).
 compute urban3=0.
 if urindew="1" urban3=1.
 if urindew="2" urban3=2.
@@ -1070,8 +1251,8 @@ value labels urban3
 2 "Town & Fringe"
 3 "Village, Hamlet and Isolated Dwelling".
 formats urban3 (F8.2).
-EXECUTE.
-*minority ethnic group.
+fre urban3.
+
 compute origin5=-2.
 if (ethnici=1) origin5=1.
 if (ethnici=2) origin5=4.
@@ -1085,15 +1266,16 @@ value labels origin5
 4 "Mixed"
 5 "Any other".
 missing values origin5 (-2).
-exe.
+
+
 *Ethnicity.
+
 compute origin1=-2.
 if ethnici=1 origin1=1.
 if any(ethnici,2,3,4,5,6,7) origin1=0.
 exe.
 value labels origin1 0 "non-white" 1 "white".
-EXECUTE.
-*social class.
+
 compute sclass_h=-2.
 if sclass=1 sclass_h=1.
 if sclass=2 sclass_h=2.
@@ -1102,7 +1284,10 @@ if sclass=4 sclass_h=4.
 if sclass=5 sclass_h=5.
 if sclass=6 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
-exe.
+cro/tables = sclass by sclass_h.
+
+cro/tables = pillevr by pilluse.
+
 compute pill3=-2.
 if (pillevr=2) pill3=1.
 if (pillevr=1) & (pilluse=2) pill3=2.
@@ -1113,10 +1298,14 @@ val labels pill3
     2 "Taken not current"
     3 "Current".
 exe.
+fre pill3.
+
 *BMI.
+
 compute bmival2=bmival.
 compute wtval2=wtval.
 exe.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -1126,12 +1315,12 @@ if range(bmival2,35,100) bmivg52=4.
 EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
 
-*physical activity.
 rename variables (adhse30b=adhse30).
 rename variables (adman30b=adman30).
 rename variables (adsp30=adsp30).
 rename variables (adwlk30b=adwlk30).
 exe.
+    
 COMPUTE adtot30x=0.
 IF range(adsp30,1,28) adtot30x=adtot30x+adsp30.
 IF range(adwlk30,1,28) adtot30x=adtot30x+adwlk30.
@@ -1141,9 +1330,11 @@ IF workactg=2 AND ftptime=1 adtot30x=adtot30x+20.
 IF workactg=2 AND ftptime <>1 adtot30x=adtot30x+12.
 recode adtot30x (28 thru hi=28).
 EXECUTE.
+
 IF any(-8, adsp30, adwlk30, adman30, adhse30, workactg, ftptime) adtot30x=-8.
 IF any(-9, adsp30, adwlk30, adman30, adhse30, workactg, ftptime) adtot30x=-9.
 exe.
+
 recode adtot30x (1 thru 3=1) (4 thru 11=2) (12 thru 19=3) (20 thru hi=4) (else=copy) INTO a30t06c.
 value labels a30t06c
 0 'None'
@@ -1152,12 +1343,13 @@ value labels a30t06c
 3 '3 or 4 a week'
 4 '5 or more a week'.
 EXECUTE.
-*alcohol.
+
 compute d7many3=d7many.
 if any(2,dnany,d7day) d7many3=0.
 if dnoft2=8 d7many3=0.
 variable labels d7many3 "(D) Number of days drank in last week, including none".
 EXE.
+
 **dnewutg.
 recode d7unit (0 thru 2=1) (2 thru 3=2) (3 thru 4=3) (4 thru 5=4) (5 thru 6=5) (6 thru 8=6) (8 thru hi=7) (else=copy) into dnewutg.
 variable label dnewutg "(D) ADJUSTED FOR WINE GLASSES - units drunk on heaviest day in last 7 (grouped)".
@@ -1170,6 +1362,7 @@ value labels dnewutg
  6 "Over 6 and up to (& including) 8"
  7 "Over 8+".
 exe.
+
 compute wdrink=-5.
 DO if sex=2.
 recode d7unit (6.01 thru hi=3)(3.01 thru 6=2)(0 thru 3=1) (else=copy) into wdrink.
@@ -1183,6 +1376,7 @@ value labels wdrink
 2 'greater than 3 and less than or equal to 6 units'
 3 'great than 6 units'.
 execute.
+
 compute mdrink=-5.
 DO if sex=1.
 recode d7unit (8.01 thru hi=3)(4.01 thru 8=2)(0 thru 4=1)(else=copy) into mdrink.
@@ -1196,6 +1390,7 @@ value labels mdrink
 2 'greater than 4 and less than or equal to 8 units'
 3 'great than 8 units'.
 execute.
+
 missing values mdrink wdrink ().
 COMPUTE alclimit2=-1. 
 if (mdrink=0) alclimit2=0.
@@ -1218,52 +1413,80 @@ VAL LAB alclimit2
 missing values alclimit2 (-9 thru -1).
 rename variables (alclimit2=alclimit07b).
 exe.
-*Benefits.
+
 compute benefit1=srcin06a.
 compute benefit4=srcin07a.
 compute benefit5=srcin08a.
 compute benefit7=srcin09a.
 compute benefit9=srcin10a.
 exe.
-
 *Hypertension (meds PRESCRIBED for high BP).
+*Taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd.
+
+*Taking drugs affecting in the last 7 days.
+fre bpmedc.
+
+*recode using medcnjd.
+cro/tables = bpmedd by medcnjd.
+cro/tables = bpmedc by medcnjd.
+
 compute bpmedd_h=-2.
 if (bpmedd=0)|(medcnjd=2) bpmedd_h=0.
 if (bpmedd=1) bpmedd_h=1.
 val labels bpmedd_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedd_h.
+
 compute bpmedc_h=-2.
 if (bpmedc=0)|(medcnjd=2) bpmedc_h=0.
 if (bpmedc=1) bpmedc_h=1.
 val labels bpmedc_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedc_h.
+
 compute highbp=hy140om.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
-exe.
-*cholesterol.
+fre highbp.
+
+cro/tables = hy140om by bpmedd.
+
+*hdlval excludes LLD.
+*hdlchol & hdlval1 are the same.
+
+TEMPORARY.
+sel if lipid=1.
+desc var hdlchol hdlval hdlval1.
+
 compute hdlval1a = hdlchol.
 exe.
+
 * Cholest includes lld.
 compute raised=-2.
 if range(cholest,0,4.9) raised=0.
 if cholest>4.9 raised=1.
-exe.
+fre raised.
+
 compute cholval13=cholest.
 exe.
+
 *Lipid.
+cro/tables = lipid by medcnjd.
+
 compute lipid_h=-2.
 if (lipid=0)|(medcnjd=2) lipid_h=0.
 if (lipid=1) lipid_h=1.
 val labels lipid_h 0 "not on lipid" 1 "lipid".
-exe.
+fre lipid_h.
+
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
-exe.
+fre medtyp1_h.
+
 *Diabetes (6.5%).
 compute diabete3=-11.
 If (Glyhbval>0 & Glyhbval<6.5) & (diabete2=2) diabete3=1.
@@ -1281,14 +1504,21 @@ missing values diabete3 (-9,-8,-1).
 exe.
 
 *switch missing values on.
+
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
 VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
-exe.
+fre CVD_Risk.
+
+temp.
+sel if CVD_Risk=1.
+desc var sex age cigsta3 bmival2 highbp diabete2/stats=min max mean.
+
 rename var(nurse_wt int_wt blood_wt = wt_nurse wt_int wt_blood).
 exe.
 compute psu99=area.
 EXECUTE.
+
 FORMAT psu99 (F4).
 EXE.
 string areastr (a4).
@@ -1306,6 +1536,7 @@ compute age_h=age.
 exe.
 
 *Diagnosed BP (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everbp docnurbp.
 compute diag_hbp_h=-99.
 if everbp=2|docnurbp=2 diag_hbp_h=0.
 if everbp=1 & (docnurbp=1) diag_hbp_h=1.
@@ -1313,6 +1544,7 @@ value labels diag_hbp_h 0 "No" 1 "Yes".
 fre diag_hbp_h.
 
 *Diagnosed stroke (missing not coded as no).
+fre everstro docstro.
 compute diag_stroke_h=-99.
 if everstro=2|docstro=2 diag_stroke_h=0.
 if everstro=1 & (docstro=1) diag_stroke_h=1.
@@ -1320,6 +1552,7 @@ value labels diag_stroke_h 0 "No" 1 "Yes".
 fre diag_stroke_h.
 
 *Diagnosed angina (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everangi docangi.
 compute diag_angi_h=-99.
 if everangi=2|docangi=2 diag_angi_h=0.
 if everangi=1 & (docangi=1) diag_angi_h=1.
@@ -1327,6 +1560,7 @@ value labels diag_angi_h 0 "No" 1 "Yes".
 fre diag_angi_h.   
 
 *Diagnosed MI (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everhart docheart.
 compute diag_mi_h=-99.
 if everhart=2|docheart=2 diag_mi_h=0.
 if everhart=1 & (docheart=1) diag_mi_h=1.
@@ -1334,13 +1568,16 @@ value labels diag_mi_h 0 "No" 1 "Yes".
 fre diag_mi_h.  
 
 *Diagnosed diabetes (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everdi docinfo1.
 compute diag_diab_h=-99.
 if everdi=2|docinfo1=2 diag_diab_h=0.
 if everdi=1 & (docinfo1=1) diag_diab_h=1.
 value labels diag_diab_h 0 "No" 1 "Yes".
 fre diag_diab_h. 
  
+
 *Ischaemic heart disease.
+compute diag_isch_h=-99.
 if (diag_mi_h=0 & diag_angi_h=0) diag_isch_h=0.
 if (diag_mi_h=1 | diag_angi_h=1) diag_isch_h=1.
 value labels diag_isch_h 0 "No" 1 "Yes".
@@ -1348,10 +1585,12 @@ fre diag_isch_h.
 
 compute glyhb_h = glyhbval.
 exe.
+
 compute dimed_h = medcindi.
 exe.
+
 compute year=2003.
-save outfile = "TEMP\HSE2003RF.sav"
+save outfile = "N:\Temp\HSE2003RF.sav"
 /keep hid id year sex age age_h ag16g10  area cluster 
 ethnici hhsize marital 
 tenureb car numcars 
@@ -1390,16 +1629,21 @@ diag_hbp_h diag_stroke_h diag_angi_h diag_mi_h diag_diab_h diag_isch_h dnnow dna
 dimed_h medheart insulin puls1om puls2om puls3om. 
 
 
-**************************************.
-* 2005: no selection on samptype.
-**************************************.
+*****************************************.
+* 2005 (include older persons boost).
+****************************************.
 
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse05ai.sav'.
+dataset close all.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse05ai.sav'.
 missing values all ().
 exe.
 select if age>=16.
 EXECUTE.
+
+*select if (samptype=1 & age>=16).
+*EXECUTE.
+fre samptype.
+
 **Household id.
 compute hid=hserial.
 EXECUTE.
@@ -1409,6 +1653,7 @@ compute id=pserial.
 EXECUTE.
 formats id(F10.0).
 exe.
+
 compute qrtint=-99.
 if any(mintb,1,2,3) qrtint=1.
 if any(mintb,4,5,6) qrtint=2.
@@ -1418,6 +1663,7 @@ EXECUTE.
 variable label qrtint "Quarter of Interview".
 value labels qrtint 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
 exe.
+
 compute qrtnvis=-99.
 if any(vismon,1,2,3) qrtnvis=1.
 if any(vismon,4,5,6) qrtnvis=2.
@@ -1426,10 +1672,14 @@ if any(vismon,10,11,12) qrtnvis=4.
 EXECUTE.
 variable label qrtnvis "Quarter of Nurse visit".
 value labels qrtnvis 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
+fre qrtint qrtnvis.
+
 formats gor(F8.2).
+
 compute imd_h=imd2004.
 formats imd_h(F8.2).
 exe.
+
 compute mstatus_h=-2.
 if marstatb=1 mstatus_h=1.
 if marstatb=2 mstatus_h=2.
@@ -1439,9 +1689,10 @@ if marstatb=5 mstatus_h=5.
 if marstatb=6 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
-exe.
+cro/tables = marstatb by mstatus_h.
 
-*urban.
+*numeric (a1).
+
 recode urindew (1=1) (2=2) (3=3) (4=3) (5=1) (6=2) (7 thru hi =3) (-9 thru -1 = COPY) into urban3.
 var lab Urban3 "(D) Rurality of dwelling unit".
 value labels urban3 
@@ -1449,12 +1700,15 @@ value labels urban3
 2 "Town & Fringe"
 3 "Village, Hamlet and Isolated Dwelling".
 formats urban3 (F8.2).
-exe.
+fre urban3.
+
+*urban_b from 8 urindew.
+
 recode urindew (1=1) (2=0) (3=0) (4=0) (5=1) (6=0) (7 thru hi =0) (-9 thru -1 = COPY) into urban_b.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
-EXECUTE.
-*minority ethnic group.
+cro/tables = urindew by urban_b.
+
 compute origin5=-2.
 if (ethinda=1) origin5=1.
 if (ethinda=2) origin5=4.
@@ -1468,15 +1722,16 @@ value labels origin5
 4 "Mixed"
 5 "Any other".
 missing values origin5 (-2).
-exe.
+
 *Ethnicity.
+
 compute origin1=-2.
 if ethinda=1 origin1=1.
 if any(ethinda,2,3,4,5) origin1=0.
 exe.
 value labels origin1 0 "non-white" 1 "white".
 exe.
-*Social class.
+
 compute sclass_h=-2.
 if sclass=1 sclass_h=1.
 if sclass=2 sclass_h=2.
@@ -1485,7 +1740,10 @@ if sclass=4 sclass_h=4.
 if sclass=5 sclass_h=5.
 if sclass=6 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
-exe.
+cro/tables = sclass by sclass_h.
+
+cro/tables = pillevr by pilluse.
+
 compute pill3=-2.
 if (pillevr=2) pill3=1.
 if (pillevr=1) & (pilluse=2) pill3=2.
@@ -1496,10 +1754,15 @@ val labels pill3
     2 "Taken not current"
     3 "Current".
 exe.
+fre pill3.
+
+
 *BMI.
+
 compute bmival2=bmival.
 compute wtval2=wtval.
 exe.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -1508,12 +1771,13 @@ if range(bmival2,30,34.9999) bmivg52=3.
 if range(bmival2,35,100) bmivg52=4.
 EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
-*alcohol.
+
 compute d7many3=d7many.
 if any(2,dnany,d7day) d7many3=0.
 if dnoft2=8 d7many3=0.
 variable labels d7many3 "(D) Number of days drank in last week, including none".
 EXE.
+
 **dnewutg.
 recode d7unit (0 thru 2=1) (2 thru 3=2) (3 thru 4=3) (4 thru 5=4) (5 thru 6=5) (6 thru 8=6) (8 thru hi=7) (else=copy) into dnewutg.
 variable label dnewutg "(D) - units drunk on heaviest day in last 7 (grouped)".
@@ -1580,7 +1844,7 @@ missing values alclimit2 (-9 thru -1).
 exe.
 rename variables (alclimit2=alclimit07b).
 exe.
-*Benefits.
+
 compute benefit1=srcin06b.
 compute benefit2=srcin07b.
 compute benefit4=srcin08b.
@@ -1589,51 +1853,85 @@ compute benefit6=srcin10b.
 compute benefit7=srcin11b.
 compute benefit9=srcin12b.
 exe.
+
 *Diagnosed CVD (among those reporting ever).
 *fre docinfo1 murdoc docstro docangi docheart docireg docoht.
 
-*Hypertension.
+*Hypertension (meds PRESCRIBE for high BP).
+*Taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd.
+
+*Taking drugs affecting in the last 7 days.
+fre bpmedc.
+
+*recode using medcnjd.
+cro/tables = bpmedd by medcnjd.
+cro/tables = bpmedc by medcnjd.
+
 compute bpmedd_h=-2.
 if (bpmedd=0)|(medcnjd=2) bpmedd_h=0.
 if (bpmedd=1) bpmedd_h=1.
 val labels bpmedd_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedd_h.
+
 compute bpmedc_h=-2.
 if (bpmedc=0)|(medcnjd=2) bpmedc_h=0.
 if (bpmedc=1) bpmedc_h=1.
 val labels bpmedc_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedc_h.
+
 compute highbp=hy140om.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
-exe.
+fre highbp.
 
-*cholesterol.
+cro/tables = hy140om by bpmedd.
+
 compute cholval13=cholest.
 exe.
+
+*hdlval excludes LLD.
+*hdlchol & hdlval1 are the same.
+
+TEMPORARY.
+sel if lipid=1.
+desc var hdlchol hdlval hdlval1.
+
 compute hdlval1a = hdlchol.
 exe.
+    
 *Lipid.
+cro/tables = lipid by medcnjd.
+
 compute lipid_h=-2.
 if (lipid=0)|(medcnjd=2) lipid_h=0.
 if (lipid=1) lipid_h=1.
 val labels lipid_h 0 "not on lipid" 1 "lipid".
-exe.
+fre lipid_h.
+
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
-exe.
+fre medtyp1_h.
 
-*CVD risk.
+*Diabetes.
+desc var glyhbval.
+
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
 VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
-exe.
+
+
+temp.
+sel if CVD_Risk=1.
+desc var sex age cigsta3 bmival2 highbp diabete2/stats=min max mean.
 
 *talk to GP in last last month.
+
 compute docmonth=-2.
 if (ndoctalk=1) & (whendoc<0) docmonth=1.
 if (ndoctalk=1) & (whendoc=1) docmonth=1.
@@ -1642,7 +1940,8 @@ if (ndoctalk=2) & whendoc=1 docmonth=1.
 if (ndoctalk=2) & any(whendoc,2,3,4,5,6) docmonth=0.
 variable label docmonth "Talk to GP in last month".
 value labels docmonth 0 "No" 1 "Yes".
-exe.
+fre docmonth.
+
 compute psu99=area.
 EXECUTE.
 FORMAT psu99 (F4).
@@ -1658,17 +1957,23 @@ exe.
 STRING point1 (A8).
 COMPUTE point1 = CONCAT(year1,areastr).
 EXECUTE.
-*no blood wt.
-compute wt_blood = wt_nurse.
+
+*use wt_bldEL if wish to use blood sample data for over 65s.
+*set wt_blood to zero avoid any confusion.
+
+compute wt_blood = 0.
 exe.
 compute age_h=age.
 exe.
+
 compute glyhb_h = glyhbval.
 exe.
+
 compute dimed_h = medcindi.
 exe.
+
 compute year=2005.
-save outfile = "TEMP\HSE2005RF.sav"
+save outfile = "N:\Temp\HSE2005RF.sav"
 /keep hid id year sex age age_h ag16g10 
 ethinda hhsize marital
 tenureb car numcars imd2004 imd_h
@@ -1705,18 +2010,20 @@ wt_nurEL
 wt_bldEL
 wt_int puls1om puls2om puls3om.
 
+
 ****************************.
-*2006.
-*65+:CVD module (s1).
-*65+:PA module (s2).
+* 2006.
+* CVD module (wt_int_s1).
+* PA module (wt_int_s2).
 ****************************.
 
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse06ai.sav'.
+dataset close all.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse06ai.sav'.
 missing values all ().
 exe.
 select if age>=16.
 EXECUTE.
+
 **Household id.
 compute hid=hserial.
 EXECUTE.
@@ -1728,6 +2035,7 @@ compute id=pserial.
 EXECUTE.
 formats id(F10.0).
 exe.
+
 compute qrtint=-99.
 if any(mintb,1,2,3) qrtint=1.
 if any(mintb,4,5,6) qrtint=2.
@@ -1737,6 +2045,7 @@ EXECUTE.
 variable label qrtint "Quarter of Interview".
 value labels qrtint 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
 exe.
+
 compute qrtnvis=-99.
 if any(vismon,1,2,3) qrtnvis=1.
 if any(vismon,4,5,6) qrtnvis=2.
@@ -1745,9 +2054,11 @@ if any(vismon,10,11,12) qrtnvis=4.
 EXECUTE.
 variable label qrtnvis "Quarter of Nurse visit".
 value labels qrtnvis 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
-exe.
+fre qrtint qrtnvis.
+
 formats gor(F8.2).
 exe.
+
 compute imd_h=imd2004.
 formats imd_h(F8.2).
 EXECUTE.
@@ -1761,7 +2072,8 @@ if marstatc=6 mstatus_h=5.
 if marstatc=7 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
-*minority ethnic group.
+cro/tables = marstatc by mstatus_h.
+
 compute origin5=-2.
 if (ethinda=1) origin5=1.
 if (ethinda=2) origin5=4.
@@ -1775,14 +2087,17 @@ value labels origin5
 4 "Mixed"
 5 "Any other".
 missing values origin5 (-2).
+
 *Ethnicity.
+
 compute origin1=-2.
 if ethinda=1 origin1=1.
 if any(ethinda,2,3,4,5) origin1=0.
 exe.
 value labels origin1 0 "non-white" 1 "white".
 exe.
-*Urban.
+
+*Numeric (a1).
 recode urindew (1=1) (2=2) (3=3) (4=3) (5=1) (6=2) (7 thru hi =3) (-9 thru -1 = COPY) into urban3.
 var lab Urban3 "(D) Rurality of dwelling unit".
 value labels urban3 
@@ -1791,12 +2106,14 @@ value labels urban3
 3 "Village, Hamlet and Isolated Dwelling".
 formats urban3 (F8.2).
 
-*Urban.
+*urban_b from 8 urindew.
+
 recode urindew (1=1) (2=0) (3=0) (4=0) (5=1) (6=0) (7 thru hi =0) (-9 thru -1 = COPY) into urban_b.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
-exe.
-*Social class.
+cro/tables = urindew by urban_b.
+fre urban_b.
+
 compute sclass_h=-2.
 if sclass=1 sclass_h=1.
 if sclass=2 sclass_h=2.
@@ -1805,11 +2122,14 @@ if sclass=4 sclass_h=4.
 if sclass=5 sclass_h=5.
 if sclass=6 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
-exe.
+cro/tables = sclass by sclass_h.
+
 *BMI.
+
 compute bmival2=bmival.
 compute wtval2=wtval.
 exe.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -1819,12 +2139,15 @@ if range(bmival2,35,100) bmivg52=4.
 EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
 
-*Alcohol.
+*Alcohol (original).
+
 compute d7many3=d7many.
 if any(2,dnany,d7day) d7many3=0.
 if dnoft2=8 d7many3=0.
 variable labels d7many3 "(D) Number of days drank in last week, including none".
+
 **dnewutg.
+
 recode d7unit (0 thru 2=1) (2 thru 3=2) (3 thru 4=3) (4 thru 5=4) (5 thru 6=5) (6 thru 8=6) (8 thru hi=7) (else=copy) into dnewutg.
 variable label dnewutg "(D) - units drunk on heaviest day in last 7 (grouped)".
 value labels dnewutg
@@ -1838,6 +2161,7 @@ value labels dnewutg
 exe.
 missing values dnewutg (-1).
 EXE.
+
 RECODE dnewutg (1 thru hi=COPY) INTO dnewutga.
 RECODE d7many3(0=0) INTO dnewutga.
 VARIABLE LABEL dnewutga "".
@@ -1850,7 +2174,7 @@ VALUE LABELS dnewutga
  5 "Over 5 and up to (& including) 6"
  6 "Over 6 and up to (& including) 8"
  7 "Over 8+".
-exe.
+
 compute drink=0.
 if dnewutga=0 & sex=1 drink=0.
 if range(dnewutga,1,3) & sex=1 drink=1.
@@ -1871,7 +2195,7 @@ rename var (drink=alclimit2).
 exe.
 rename variables (alclimit2=alclimit07b).
 exe.
-*Benefits.
+
 compute benefit1=srcin06b.
 compute benefit2=srcin07b.
 compute benefit4=srcin08b.
@@ -1880,6 +2204,9 @@ compute benefit6=srcin10b.
 compute benefit7=srcin11b.
 compute benefit9=srcin12b.
 exe.
+
+cro/tables = pillevr by pilluse.
+
 compute pill3=-2.
 if (pillevr=2) pill3=1.
 if (pillevr=1) & (pilluse=2) pill3=2.
@@ -1890,55 +2217,85 @@ val labels pill3
     2 "Taken not current"
     3 "Current".
 exe.
+fre pill3.
 
-*CVD.
-*temp.
-*sel if age>=65 & samptype=2.
-*fre everbp everangi everhart evermur everireg everoht everstro everdi.
 
-*Hypertension.
+temp.
+sel if age>=65 & samptype=2.
+fre everbp everangi everhart evermur everireg everoht everstro everdi.
+*Hypertension (meds PRESCRIBED for high BP).
+
+*Taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd.
+
+*Taking drugs affecting in the last 7 days.
+fre bpmedc.
+
+*recode using medcnjd.
+cro/tables = bpmedd by medcnjd.
+cro/tables = bpmedc by medcnjd.
+
 compute bpmedd_h=-2.
 if (bpmedd=0)|(medcnjd=2) bpmedd_h=0.
 if (bpmedd=1) bpmedd_h=1.
 val labels bpmedd_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedd_h.
 
 compute bpmedc_h=-2.
 if (bpmedc=0)|(medcnjd=2) bpmedc_h=0.
 if (bpmedc=1) bpmedc_h=1.
 val labels bpmedc_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedc_h.
+
 
 compute highbp=hy140om.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
-exe.
+fre highbp.
 
-*cholesterol.
+cro/tables = hy140om by bpmedd.
+
+*hdlval excludes LLD.
+*hdlchol & hdlval1 are the same.
+
+TEMPORARY.
+sel if lipid=1.
+desc var hdlchol hdlval hdlval1.
+
 compute hdlval1a = hdlchol.
 exe.
-*Cholest includes lld.
+    
+
+* Cholest includes lld.
 compute raised=-2.
 if range(cholest,0,4.9) raised=0.
 if cholest>4.9 raised=1.
 exe.
 compute cholval13=cholest.
 EXECUTE.
+
 *Lipid.
+cro/tables = lipid by medcnjd.
+
 compute lipid_h=-2.
 if (lipid=0)|(medcnjd=2) lipid_h=0.
 if (lipid=1) lipid_h=1.
 val labels lipid_h 0 "not on lipid" 1 "lipid".
-exe.
+fre lipid_h.
+
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
-exe.
+fre medtyp1_h.
+
 
 *Diabetes.
+desc var glyhbval.
+
 compute diabete3=-11.
 If (Glyhbval>0 & Glyhbval<6.5) & (diabete2=2) diabete3=1.
 If (Glyhbval>0 & diabete2=1) diabete3=2.
@@ -1953,14 +2310,34 @@ Value labels diabete3
 Variable label diabete3 "(D) Diabetes from blood sample (>=6.5%) or doctor diagnosis (excluding pregnancy-only diabetes)".
 missing values diabete3 (-9,-8,-1).
 exe.
-*CVD risk.
+
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
 VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
-exe.
+
+temp.
+sel if CVD_Risk=1.
+desc var sex age cigsta3 bmival2 highbp diabete2/stats=min max mean.
+
+*assume focus on CVD model.
+*if (age>=65) & (samptype=1) wt_int = wt_int_s1.
+*exe.
+*No longer.
+
+temp.
+sel if age>=65.
+sel if samptype=1.
+desc var wt_int_s1 wt_int.
+
+temp.
+sel if age>=65.
+sel if samptype=2.
+desc var wt_int_s2 wt_int.
+
 
 compute psu99=psu.
 EXECUTE.
+
 FORMAT psu99 (F4).
 EXE.
 string areastr (a4).
@@ -1978,6 +2355,7 @@ compute age_h=age.
 exe.
 
 *Diagnosed BP (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everbp docnurbp.
 compute diag_hbp_h=-99.
 if everbp=2|docnurbp=2 diag_hbp_h=0.
 if everbp=1 & (docnurbp=1) diag_hbp_h=1.
@@ -1985,6 +2363,7 @@ value labels diag_hbp_h 0 "No" 1 "Yes".
 fre diag_hbp_h.
 
 *Diagnosed stroke (missing not coded as no).
+fre everstro docstro.
 compute diag_stroke_h=-99.
 if everstro=2|docstro=2 diag_stroke_h=0.
 if everstro=1 & (docstro=1) diag_stroke_h=1.
@@ -1992,6 +2371,7 @@ value labels diag_stroke_h 0 "No" 1 "Yes".
 fre diag_stroke_h.
 
 *Diagnosed angina (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everangi docangi.
 compute diag_angi_h=-99.
 if everangi=2|docangi=2 diag_angi_h=0.
 if everangi=1 & (docangi=1) diag_angi_h=1.
@@ -1999,6 +2379,7 @@ value labels diag_angi_h 0 "No" 1 "Yes".
 fre diag_angi_h.   
 
 *Diagnosed MI (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everhart docheart.
 compute diag_mi_h=-99.
 if everhart=2|docheart=2 diag_mi_h=0.
 if everhart=1 & (docheart=1) diag_mi_h=1.
@@ -2006,12 +2387,14 @@ value labels diag_mi_h 0 "No" 1 "Yes".
 fre diag_mi_h.  
 
 *Diagnosed diabetes (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everdi docinfo1.
 compute diag_diab_h=-99.
 if everdi=2|docinfo1=2 diag_diab_h=0.
 if everdi=1 & (docinfo1=1) diag_diab_h=1.
 value labels diag_diab_h 0 "No" 1 "Yes".
 fre diag_diab_h. 
  
+
 *Ischaemic heart disease.
 compute diag_isch_h=-99.
 if (diag_mi_h=0 & diag_angi_h=0) diag_isch_h=0.
@@ -2021,10 +2404,14 @@ fre diag_isch_h.
 
 compute glyhb_h = glyhbval.
 exe.
+
 compute dimed_h = medcindi.
 exe.
+
+*no puls3om.
+
 compute year=2006.
-save outfile = "TEMP\HSE2006RF.sav"
+save outfile = "N:\Temp\HSE2006RF.sav"
 /keep hid id psu cluster  year sex age age_h ag16g10 
 ethinda hhsize maritalb
 tenureb car numcars imd2004 imd_h
@@ -2065,12 +2452,13 @@ diag_hbp_h diag_stroke_h diag_angi_h diag_mi_h diag_diab_h diag_isch_h dnnow dna
 * 2007.
 ********
 
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse07ai.sav'.
+dataset close all.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse07ai.sav'.
 missing values all ().
 exe.
 select if age>=16.
 EXECUTE.
+
 **Household id.
 compute hid=hserial.
 EXECUTE.
@@ -2080,6 +2468,7 @@ compute id=pserial.
 EXECUTE.
 formats id(F10.0).
 exe.
+
 compute qrtint=-99.
 if any(mintb,1,2,3) qrtint=1.
 if any(mintb,4,5,6) qrtint=2.
@@ -2089,6 +2478,7 @@ EXECUTE.
 variable label qrtint "Quarter of Interview".
 value labels qrtint 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
 exe.
+
 compute qrtnvis=-99.
 if any(vismon,1,2,3) qrtnvis=1.
 if any(vismon,4,5,6) qrtnvis=2.
@@ -2097,7 +2487,8 @@ if any(vismon,10,11,12) qrtnvis=4.
 EXECUTE.
 variable label qrtnvis "Quarter of Nurse visit".
 value labels qrtnvis 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
-exe.
+fre qrtint qrtnvis.
+
 rename var (gor07 hhsizeD = gor hhsize).
 EXECUTE.
 formats gor(F8.2).
@@ -2106,7 +2497,6 @@ compute imd_h=imd2007.
 formats imd_h(F8.2).
 exe.
 
-*mstatus.
 compute mstatus_h=-2.
 if marstatc=1 mstatus_h=1.
 if marstatc=2 mstatus_h=2.
@@ -2117,9 +2507,10 @@ if marstatc=6 mstatus_h=5.
 if marstatc=7 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
-exe.
+cro/tables = marstatc by mstatus_h.
 
-*urban.
+*numeric(a1).
+fre urindew.
 recode urindew (1=1) (2=2) (3=3) (4=3) (5=1) (6=2) (7 thru hi =3) (-9 thru -1 = COPY) into urban3.
 var lab Urban3 "(D) Rurality of dwelling unit".
 value labels urban3 
@@ -2127,11 +2518,16 @@ value labels urban3
 2 "Town & Fringe"
 3 "Village, Hamlet and Isolated Dwelling".
 formats urban3 (F8.2).
-exe.
+fre urban3.
+
+
+*urban_b from 8 urindew.
+
 recode urindew (1=1) (2=0) (3=0) (4=0) (5=1) (6=0) (7 thru hi =0) (-9 thru -1 = COPY) into urban_b.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
-exe.
+cro/tables = urindew by urban_b.
+
 compute origin5=-2.
 if (ethinda=1) origin5=1.
 if (ethinda=2) origin5=4.
@@ -2147,13 +2543,13 @@ value labels origin5
 missing values origin5 (-2).
 
 *Ethnicity.
+
 compute origin1=-2.
 if ethinda=1 origin1=1.
 if any(ethinda,2,3,4,5) origin1=0.
 exe.
 value labels origin1 0 "non-white" 1 "white".
-exe.
-*Social class.
+
 compute sclass_h=-2.
 if sclass=1 sclass_h=1.
 if sclass=2 sclass_h=2.
@@ -2162,10 +2558,14 @@ if sclass=4 sclass_h=4.
 if sclass=5 sclass_h=5.
 if sclass=6 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
+cro/tables = sclass by sclass_h.
+
 *BMI.
+
 compute bmival2=bmival.
 compute wtval2=wtval.
 exe.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -2174,7 +2574,7 @@ if range(bmival2,30,34.9999) bmivg52=3.
 if range(bmival2,35,100) bmivg52=4.
 EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
-*Benefits.
+
 compute benefit1=srcin06b.
 compute benefit2=srcin07b.
 compute benefit4=srcin08b.
@@ -2185,18 +2585,27 @@ compute benefit9=srcin12b.
 exe.
 
 
-*Hypertension.
+*Taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd.
+
+*Taking drugs affecting in the last 7 days.
+fre bpmedc.
+
+*recode using medcnjd.
+cro/tables = bpmedd by medcnjd.
+cro/tables = bpmedc by medcnjd.
+
 compute bpmedd_h=-2.
 if (bpmedd=0)|(medcnjd=2) bpmedd_h=0.
 if (bpmedd=1) bpmedd_h=1.
 val labels bpmedd_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedd_h.
 
 compute bpmedc_h=-2.
 if (bpmedc=0)|(medcnjd=2) bpmedc_h=0.
 if (bpmedc=1) bpmedc_h=1.
 val labels bpmedc_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedc_h.
 
 **Hypertension (PRESCRIBED for high BP).
 compute highbp=hy140om.
@@ -2204,19 +2613,26 @@ VALUE LABELS highbp 1 'Normotensive untreated'
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
-exe.
+fre highbp.
+cro/tables = hy140om by bpmedd.
 
 *Lipid.
+cro/tables = lipid by medcnjd.
+
 compute lipid_h=-2.
 if (lipid=0)|(medcnjd=2) lipid_h=0.
 if (lipid=1) lipid_h=1.
 val labels lipid_h 0 "not on lipid" 1 "lipid".
-exe.
+fre lipid_h.
+
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
-exe.
+fre medtyp1_h.
+
+
 compute psu99=area.
 EXECUTE.
 FORMAT psu99 (F4).
@@ -2234,8 +2650,9 @@ COMPUTE point1 = CONCAT(year1,areastr).
 EXECUTE.
 compute age_h=age.
 exe.
+
 compute year=2007.
-save outfile = "TEMP\HSE2007RF.sav"
+save outfile = "N:\Temp\HSE2007RF.sav"
 /keep hid id year sex age age_h ag16g10 
 ethinda marstat
 tenureb car numcars 
@@ -2261,12 +2678,10 @@ benefit1 benefit2 benefit4 benefit5 benefit6 benefit7 benefit9 nuroutc
 bpmedd bpmedc bpmedd_h bpmedc_h porftvg lipid lipid_h medtyp1 medtyp1_h qrtint qrtnvis dnnow dnany dnevr puls1om puls2om puls3om .
 
 
-********
 * 2008.
-********
 
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse08ai.sav'.
+DATASET CLOSE ALL.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse08ai.sav'.
 missing values all ().
 exe.
 **Household id.
@@ -2278,6 +2693,7 @@ compute id=pserial.
 EXECUTE.
 formats id(F10.0).
 EXECUTE.
+
 compute qrtint=-99.
 if any(mintb,1,2,3) qrtint=1.
 if any(mintb,4,5,6) qrtint=2.
@@ -2287,6 +2703,7 @@ EXECUTE.
 variable label qrtint "Quarter of Interview".
 value labels qrtint 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
 exe.
+
 compute qrtnvis=-99.
 if any(vismon,1,2,3) qrtnvis=1.
 if any(vismon,4,5,6) qrtnvis=2.
@@ -2295,15 +2712,18 @@ if any(vismon,10,11,12) qrtnvis=4.
 EXECUTE.
 variable label qrtnvis "Quarter of Nurse visit".
 value labels qrtnvis 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
-exe.
+fre qrtint qrtnvis.
+
+
 formats gor(F8.2).
 EXECUTE.
 compute imd_h=qimd.
 formats imd_h(F8.2).
 exe.
+
 select if age>=16.
 EXECUTE.
-*marital status.
+
 compute mstatus_h=-2.
 if marstatc=1 mstatus_h=1.
 if marstatc=2 mstatus_h=2.
@@ -2314,20 +2734,24 @@ if marstatc=6 mstatus_h=5.
 if marstatc=7 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
-*Binary Urban.
+cro/tables = marstatc by mstatus_h.
+
+
+*Binary urban.
 compute urban_b=-2.
 if urban=1 urban_b=1.
 if any(urban,2,3) urban_b=0.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
-exe.
+cro/tables = urban by urban_b.
+
 compute urban3=urban.
 value labels urban3 
 1 "Urban"
 2 "Town & Fringe"
 3 "Village, Hamlet and Isolated Dwelling".
-exe.
-*Ethnicity.
+formats urban3 (F8.2).
+
 compute origin5=-2.
 if (origin=1)|(origin=2)|(origin=3) origin5=1.
 if (origin=12)|(origin=13)|(origin=14) origin5=2.
@@ -2341,14 +2765,16 @@ value labels origin5
 4 "Mixed"
 5 "Any other".
 missing values origin5 (-2).
+
 *Ethnicity.
+
 compute origin1=-2.
 if ANy(origin,1,2,3) origin1=1.
 if any(origin,4,5,6,7,8,9,10,11,12,13,14,15,16) origin1=0.
 exe.
 value labels origin1 0 "non-white" 1 "white".
 exe.
-*Social class.
+
 compute sclass_h=-2.
 if sclass=1 sclass_h=1.
 if sclass=2 sclass_h=2.
@@ -2357,10 +2783,14 @@ if sclass=4 sclass_h=4.
 if sclass=5 sclass_h=5.
 if sclass=6 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
+cro/tables = sclass by sclass_h.
+
 *BMI.
+
 compute bmival2=bmival.
 compute wtval2=wtval.
 exe.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -2369,7 +2799,7 @@ if range(bmival2,30,34.9999) bmivg52=3.
 if range(bmival2,35,100) bmivg52=4.
 EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
-*Benefits.
+
 compute benefit1=srcin06b.
 compute benefit2=srcin07b.
 compute benefit4=srcin08b.
@@ -2378,42 +2808,77 @@ compute benefit6=srcin10b.
 compute benefit7=srcin11b.
 compute benefit9=srcin12b.
 exe.
-*Hypertension.
+
+*Taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd.
+
+*Taking drugs affecting in the last 7 days.
+fre bpmedc.
+
+*recode using medcnjd.
+cro/tables = bpmedd by medcnjd.
+cro/tables = bpmedc by medcnjd.
+
 compute bpmedd_h=-2.
 if (bpmedd=0)|(medcnjd=2) bpmedd_h=0.
 if (bpmedd=1) bpmedd_h=1.
 val labels bpmedd_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedd_h.
+
 compute bpmedc_h=-2.
 if (bpmedc=0)|(medcnjd=2) bpmedc_h=0.
 if (bpmedc=1) bpmedc_h=1.
 val labels bpmedc_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedc_h.
+
 *Hypertension (PRESCRIBED FOR HIGH BP).
 compute highbp=hy140om.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
-*Cholesterol.
+fre highbp.
+cro/tables = hy140om by bpmedd.
+
+
+*hdlval excludes LLD.
+*hdlchol & hdlval1 are the same.
+
 compute cholval13=cholest.
 EXECUTE.
+
+TEMPORARY.
+sel if lipid=1.
+desc var hdlchol hdlval hdlval1.
+
 compute hdlval1a = hdlchol.
 exe.
+
 *Lipid.
+cro/tables = lipid by medcnjd.
+
 compute lipid_h=-2.
 if (lipid=0)|(medcnjd=2) lipid_h=0.
 if (lipid=1) lipid_h=1.
 val labels lipid_h 0 "not on lipid" 1 "lipid".
-exe.
-*CVD med.
+fre lipid_h.
+
+
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
-exe.
+fre medtyp1_h.
+
+
+
+*Diabetes.
+desc var glyhbval.
+
 compute psu99=psu.
 EXECUTE.
+
 FORMAT psu99 (F4).
 EXE.
 string areastr (a4).
@@ -2429,11 +2894,12 @@ COMPUTE point1 = CONCAT(year1,areastr).
 EXECUTE.
 compute age_h=age.
 exe.
-*Diabetes.
+
 compute glyhb_h = glyhbval.
 exe.
+
 compute year=2008.
-save outfile = "TEMP\HSE2008RF.sav"
+save outfile = "N:\Temp\HSE2008RF.sav"
 /keep hid id psu year sex age age_h ag16g10  
 origin hhsize maritalb
 tenureb car numcars qimd imd_h
@@ -2460,11 +2926,10 @@ bpmedd bpmedc bpmedd_h bpmedc_h  lipid lipid_h medtyp1 medtyp1_h ghq12scr qrtint
 puls1om puls2om puls3om.
 
 
-
-
 * 2009.
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse09ai.sav'.
+
+DATASET CLOSE ALL.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse09ai.sav'.
 missing values all ().
 exe.
 select if age>=16.
@@ -2478,6 +2943,7 @@ compute id=pserial.
 EXECUTE.
 formats id(F10.0).
 exe.
+
 compute qrtint=-99.
 if any(mintb,1,2,3) qrtint=1.
 if any(mintb,4,5,6) qrtint=2.
@@ -2487,6 +2953,7 @@ EXECUTE.
 variable label qrtint "Quarter of Interview".
 value labels qrtint 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
 exe.
+
 compute qrtnvis=-99.
 if any(vismon,1,2,3) qrtnvis=1.
 if any(vismon,4,5,6) qrtnvis=2.
@@ -2495,8 +2962,11 @@ if any(vismon,10,11,12) qrtnvis=4.
 EXECUTE.
 variable label qrtnvis "Quarter of Nurse visit".
 value labels qrtnvis 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
-exe.
+fre qrtint qrtnvis.
+
+
 *gor (string 3).
+
 delete variables gor.
 rename var (gor07 = gor).
 EXECUTE.
@@ -2505,7 +2975,7 @@ EXECUTE.
 compute imd_h=imd2007.
 formats imd_h(F8.2).
 exe.
-*marital status.
+
 compute mstatus_h=-2.
 if marstatc=1 mstatus_h=1.
 if marstatc=2 mstatus_h=2.
@@ -2516,24 +2986,35 @@ if marstatc=6 mstatus_h=5.
 if marstatc=7 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
-exe.
+cro/tables = marstatc by mstatus_h.
 
-*Urban.
+
+*Binary urban.
+fre urban.
 compute urban_b=-2.
 if urban=1 urban_b=1.
 if any(urban,2,3) urban_b=0.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
-exe.
+fre urban_b.
+cro/tables = urban by urban_b.
+
+fre urban.
 compute urban3=urban.
 value labels urban3 
 1 "Urban"
 2 "Town & Fringe"
 3 "Village, Hamlet and Isolated Dwelling".
 formats urban3 (F8.2).
-exe.
+fre urban3.
 
-*Minority ethnic group.
+
+temp.
+sel if bp1=1.
+fre medbp.
+
+
+fre origin.
 compute origin5=-2.
 if (origin=1)|(origin=2)|(origin=3) origin5=1.
 if (origin=12)|(origin=13)|(origin=14) origin5=2.
@@ -2547,14 +3028,17 @@ value labels origin5
 4 "Mixed"
 5 "Any other".
 missing values origin5 (-2).
+fre origin5.
+
 *Ethnicity.
+
 compute origin1=-2.
 if ANy(origin,1,2,3) origin1=1.
 if any(origin,4,5,6,7,8,9,10,11,12,13,14,15,16) origin1=0.
 exe.
 value labels origin1 0 "non-white" 1 "white".
 exe.
-*social class.
+
 compute sclass_h=-2.
 if sclass=1 sclass_h=1.
 if sclass=2 sclass_h=2.
@@ -2563,10 +3047,14 @@ if sclass=4 sclass_h=4.
 if sclass=5 sclass_h=5.
 if sclass=6 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
+cro/tables = sclass by sclass_h.
+
 *BMI.
+
 compute bmival2=bmival.
 compute wtval2=wtval.
 exe.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -2575,7 +3063,7 @@ if range(bmival2,30,34.9999) bmivg52=3.
 if range(bmival2,35,100) bmivg52=4.
 EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
-*Benefits.
+
 compute benefit1=srcin06b.
 compute benefit2=srcin07b.
 compute benefit4=srcin08b.
@@ -2584,42 +3072,72 @@ compute benefit6=srcin10b.
 compute benefit7=srcin11b.
 compute benefit9=srcin12b.
 exe.
-*Hypertension.
+
+
+*Taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd.
+
+*Taking drugs affecting in the last 7 days.
+fre bpmedc.
+
+*recode using medcnjd.
+cro/tables = bpmedd by medcnjd.
+cro/tables = bpmedc by medcnjd.
+
 compute bpmedd_h=-2.
 if (bpmedd=0)|(medcnjd=2) bpmedd_h=0.
 if (bpmedd=1) bpmedd_h=1.
 val labels bpmedd_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedd_h.
+
 compute bpmedc_h=-2.
 if (bpmedc=0)|(medcnjd=2) bpmedc_h=0.
 if (bpmedc=1) bpmedc_h=1.
 val labels bpmedc_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedc_h.
+
 *Hypertension (meds PRESCRIBED for high BP).
 compute highbp=hy140om.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
-exe.
-*Cholesterol.
+fre highbp.
+cro/tables = hy140om by bpmedd.
+
+*hdlval excludes LLD.
+*hdlchol & hdlval1 are the same.
+
+TEMPORARY.
+sel if lipid=1.
+desc var hdlchol hdlval hdlval1.
+
 compute hdlval1a = hdlchol.
 exe.
+    
+
 compute cholval13=cholest.
 EXECUTE.
 
 *Lipid.
+cro/tables = lipid by medcnjd.
+
 compute lipid_h=-2.
 if (lipid=0)|(medcnjd=2) lipid_h=0.
 if (lipid=1) lipid_h=1.
 val labels lipid_h 0 "not on lipid" 1 "lipid".
+fre lipid_h.
+
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
-exe.
+fre medtyp1_h.
 
 *Diabetes.
+
+desc var glyhbval.
 compute diabete3=-11.
 If (Glyhbval>0 & Glyhbval<6.5) & (diabete2=2) diabete3=1.
 If (Glyhbval>0 & diabete2=1) diabete3=2.
@@ -2634,17 +3152,20 @@ Value labels diabete3
 Variable label diabete3 "(D) Diabetes from blood sample (>=6.5%) or doctor diagnosis (excluding pregnancy-only diabetes)".
 missing values diabete3 (-9,-8,-1).
 exe.
-compute dimed_h = dimed.
-EXECUTE.
-compute glyhb_h = glyhbval.
-EXECUTE.
-*CVD risk.
+
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
 VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
-exe.
+
+
+temp.
+sel if CVD_Risk=1.
+desc var sex age cigsta3 bmival2 highbp diabete2/stats=min max mean.
+
+
 compute psu99=psu.
 EXECUTE.
+
 FORMAT psu99 (F4).
 EXE.
 string areastr (a4).
@@ -2660,8 +3181,13 @@ COMPUTE point1 = CONCAT(year1,areastr).
 EXECUTE.
 compute age_h=age.
 exe.
+
+compute dimed_h = dimed.
+EXECUTE.
+compute glyhb_h = glyhbval.
+EXECUTE.
 compute year=2009.
-save outfile = "TEMP\HSE2009RF.sav"
+save outfile = "N:\Temp\HSE2009RF.sav"
 /keep hid id year sex age age_h ag16g10 year 
 origin hhsize maritalb
 tenureb car numcars imd2007 imd_h
@@ -2692,18 +3218,23 @@ puls1om puls2om puls3om.
 
 
 
-* 2010.
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse10ai.sav'.
+
+
+
+*2010.
+DATASET CLOSE ALL.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse10ai.sav'.
 select if age>=16.
 EXECUTE.
 missing values all ().
 exe.
+
 **Household id.
 compute hid=hserial.
 EXECUTE.
 formats hid(F10.0).
 EXECUTE.
+
 compute qrtint=-99.
 if any(mintb,1,2,3) qrtint=1.
 if any(mintb,4,5,6) qrtint=2.
@@ -2713,6 +3244,7 @@ EXECUTE.
 variable label qrtint "Quarter of Interview".
 value labels qrtint 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
 exe.
+
 compute qrtnvis=-99.
 if any(vismon,1,2,3) qrtnvis=1.
 if any(vismon,4,5,6) qrtnvis=2.
@@ -2721,7 +3253,7 @@ if any(vismon,10,11,12) qrtnvis=4.
 EXECUTE.
 variable label qrtnvis "Quarter of Nurse visit".
 value labels qrtnvis 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
-exe.
+fre qrtint qrtnvis.
 delete variables gor.
 rename var (gor1 = gor).
 EXECUTE.
@@ -2734,6 +3266,7 @@ compute id=pserial.
 EXECUTE.
 formats id(F10.0).
 exe.
+
 compute mstatus_h=-2.
 if marstatc=1 mstatus_h=1.
 if marstatc=2 mstatus_h=2.
@@ -2744,21 +3277,33 @@ if marstatc=6 mstatus_h=5.
 if marstatc=7 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
-exe.
-*Urban.
+cro/tables = marstatc by mstatus_h.
+
+
+
+
+
+
+*Binary urban.
+fre urban.
 compute urban_b=-2.
 if urban=1 urban_b=1.
 if any(urban,2,3) urban_b=0.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
-exe.
+fre urban_b.
+cro/tables = urban by urban_b.
+
+fre urban.
 compute urban3=urban.
 value labels urban3 
 1 "Urban"
 2 "Town & Fringe"
 3 "Village, Hamlet and Isolated Dwelling".
 formats urban3 (F8.2).
-*minority ethnic group.
+fre urban3.
+
+fre origin.
 compute origin5=-2.
 if (origin=1)|(origin=2)|(origin=3) origin5=1.
 if (origin=12)|(origin=13)|(origin=14) origin5=2.
@@ -2772,17 +3317,23 @@ value labels origin5
 4 "Mixed"
 5 "Any other".
 missing values origin5 (-2).
+
+
 *Ethnicity.
+
 compute origin1=-2.
 if ANy(origin,1,2,3) origin1=1.
 if any(origin,4,5,6,7,8,9,10,11,12,13,14,15,16) origin1=0.
 exe.
 value labels origin1 0 "non-white" 1 "white".
 EXECUTE.
+
 *BMI.
+
 compute bmival2=bmival.
 compute wtval2=wtval.
 exe.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -2791,7 +3342,7 @@ if range(bmival2,30,34.9999) bmivg52=3.
 if range(bmival2,35,100) bmivg52=4.
 EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
-*Benefits.
+
 compute benefit1=srcin06b.
 compute benefit2=srcin07b.
 compute benefit4=srcin08b.
@@ -2799,49 +3350,90 @@ compute benefit5=srcin09b.
 compute benefit6=srcin10b.
 compute benefit7=srcin11b.
 compute benefit9=srcin12b.
+fre benefit1.
 
-*Hypertension.
+
+*Taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd.
+
+*Taking drugs affecting in the last 7 days.
+fre bpmedc.
+
+*recode using medcnjd.
+cro/tables = bpmedd by medcnjd.
+cro/tables = bpmedc by medcnjd.
+
 compute bpmedd_h=-2.
 if (bpmedd=0)|(medcnjd=2) bpmedd_h=0.
 if (bpmedd=1) bpmedd_h=1.
 val labels bpmedd_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedd_h.
+
 compute bpmedc_h=-2.
 if (bpmedc=0)|(medcnjd=2) bpmedc_h=0.
 if (bpmedc=1) bpmedc_h=1.
 val labels bpmedc_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedc_h.
+
 **Hypertension (meds PRESCRIBED for high BP).
 compute highbp=hy140om.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
-exe.
-*Cholesterol.
+fre highbp.
+cro/tables = hy140om by bpmedd.
+
+TEMPORARY.
+sel if hy140om>=0.
+cro/tables = hy140om by bpmedd_h.
+
+*hdlval excludes LLD.
+*hdlchol & hdlval1 are the same.
+
+fre cholflag.
+temp.
+sel if lipid=1.
+desc var cholval1.
+
+*change to machinery for cholesterol.
 compute cholval13=cholest.
 EXECUTE.
-*adjust downwards as new machinery = 0.1 higher.
+
+*adjust downwards as new machinery = 0.1 higher than pre-2010.
+*time-series variable = cholval13.
 if (cholflag=2) cholval13=(cholval13 - 0.1).
 exe.
+
+TEMPORARY.
+sel if lipid=1.
+desc var hdlchol hdlval hdlval1.
+
 compute Hdlval1a = (hdlval1).
 *adjust upwards as new machinery = 0.1 lower.
 if (cholflag=2) Hdlval1a=(Hdlval1a + 0.1).
 exe.
 
 *Lipid.
+cro/tables = lipid by medcnjd.
+
 compute lipid_h=-2.
 if (lipid=0)|(medcnjd=2) lipid_h=0.
 if (lipid=1) lipid_h=1.
 val labels lipid_h 0 "not on lipid" 1 "lipid".
-exe.
+fre lipid_h.
+
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
-exe.
+fre medtyp1_h.
+
 
 *Diabetes.
+desc var glyhbval.
+
 compute diabete3=-11.
 If (Glyhbval>0 & Glyhbval<6.5) & (diabete2=2) diabete3=1.
 If (Glyhbval>0 & diabete2=1) diabete3=2.
@@ -2856,12 +3448,19 @@ Value labels diabete3
 Variable label diabete3 "(D) Diabetes from blood sample (>=6.5%) or doctor diagnosis (excluding pregnancy-only diabetes)".
 missing values diabete3 (-9,-8,-1).
 exe.
-*CVD risk.
+
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
 VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
+
+
+temp.
+sel if CVD_Risk=1.
+desc var sex age cigsta3 bmival2 highbp diabete2/stats=min max mean.
+
 compute psu99=psu.
 EXECUTE.
+
 FORMAT psu99 (F4).
 EXE.
 string areastr (a4).
@@ -2877,13 +3476,14 @@ COMPUTE point1 = CONCAT(year1,areastr).
 EXECUTE.
 compute age_h=age.
 exe.
+
 compute glyhb_h = glyhbval.
 exe.
 compute dimed_h = dimed.
 EXECUTE.
 
 compute year=2010.
-save outfile = "TEMP\HSE2010RF.sav"
+save outfile = "N:\Temp\HSE2010RF.sav"
 /keep hid id year sex age age_h ag16g10 
 sex age origin hhsize maritalb
 tenureb car numcars imd2007 imd_h
@@ -2908,7 +3508,7 @@ waist1 waist2 waist3 wstval
 hip1 hip2 hip3 hipval whval medbp 
 urban urban_b urban3 airtemp
 marstatc mstatus_h medcnjd  everbp everdi diabtype diabetes docbp psu cluster 
-pregnowb pregntj totinc eqvinc eqv5
+pregnowb pregntj   totinc eqvinc eqv5
 srcin06b srcin07b srcin08b srcin09b srcin10b srcin11b srcin12b alclimit07b
 benefit1 benefit2 benefit4 benefit5 benefit6 benefit7 benefit9 nuroutc
 bpmedd bpmedc bpmedd_h bpmedc_h diabete3 lipid lipid_h
@@ -2916,10 +3516,9 @@ medtyp1 medtyp1_h insulin dimed_h ghq12scr qrtint qrtnvis dnnow dnany dnevr  gly
 puls1om puls2om puls3om.
 
 
-
 * 2011.
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse2011ai.sav'.
+DATASET CLOSE ALL.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse2011ai.sav'.
 missing values all ().
 exe.
 select if age>=16.
@@ -2933,6 +3532,7 @@ compute id=pserial.
 EXECUTE.
 formats id(F10.0).
 exe.
+
 compute qrtint=-99.
 if any(mintb,1,2,3) qrtint=1.
 if any(mintb,4,5,6) qrtint=2.
@@ -2942,6 +3542,7 @@ EXECUTE.
 variable label qrtint "Quarter of Interview".
 value labels qrtint 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
 exe.
+
 compute qrtnvis=-99.
 if any(vismon,1,2,3) qrtnvis=1.
 if any(vismon,4,5,6) qrtnvis=2.
@@ -2950,6 +3551,8 @@ if any(vismon,10,11,12) qrtnvis=4.
 EXECUTE.
 variable label qrtnvis "Quarter of Nurse visit".
 value labels qrtnvis 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
+fre qrtint qrtnvis.
+
 rename var (gor1 = gor).
 EXECUTE.
 formats gor(F8.2).
@@ -2957,6 +3560,7 @@ EXECUTE.
 compute imd_h=qimd.
 formats imd_h(F8.2).
 exe.
+
 compute mstatus_h=-2.
 if marstatc=1 mstatus_h=1.
 if marstatc=2 mstatus_h=2.
@@ -2967,7 +3571,9 @@ if marstatc=6 mstatus_h=5.
 if marstatc=7 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
-*minority ethnic group.
+cro/tables = marstatc by mstatus_h.
+
+fre origin.
 compute origin5=-2.
 if (origin=1)|(origin=2)|(origin=3)|(origin=4) origin5=1.
 if (origin=13)|(origin=14)|(origin=15) origin5=2.
@@ -2975,30 +3581,42 @@ if (origin=9)|(origin=10)|(origin=11)|(origin=12) origin5=3.
 if (origin=5)|(origin=6)|(origin=7)|(origin=8) origin5=4.
 if (origin=16)|(origin=17)|(origin=18) origin5=5.
 missing values origin5 (-2).
+
+
 *Ethnicity.
+
 compute origin1=-2.
 if ANy(origin,1,2,3,4) origin1=1.
 if any(origin,5,6,7,8,9,10,11,12,13,14,15,16,17,18) origin1=0.
 exe.
 value labels origin1 0 "non-white" 1 "white".
 exe.
-*Urban.
+
+*Binary urban.
+fre urban.
 compute urban_b=-2.
 if urban=1 urban_b=1.
 if any(urban,2,3) urban_b=0.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
-exe.
+fre urban_b.
+cro/tables = urban by urban_b.
+
+fre urban.
 compute urban3=urban.
 value labels urban3 
 1 "Urban"
 2 "Town & Fringe"
 3 "Village, Hamlet and Isolated Dwelling".
 formats urban3 (F8.2).
+fre urban3.
+
 *BMI.
+
 compute bmival2=bmival.
 compute wtval2=wtval.
 exe.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -3008,11 +3626,11 @@ if range(bmival2,35,100) bmivg52=4.
 EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
 
-*alcohol.
 *weekly.
+
 recode totalwug (0=0) (1 thru 4=1) (5=2) (6 thru 7=3) (8=4) (9=5) (else=copy).
 exe.
-*Benefits.
+
 compute benefit1=srcin06b.
 compute benefit2=srcin07b.
 compute benefit4=srcin08b.
@@ -3023,47 +3641,88 @@ compute benefit9=srcin12b.
 exe.
 
 *Hypertension.
+
+*Taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd.
+
+*Taking drugs affecting in the last 7 days.
+fre bpmedc.
+
+*recode using medcnjd.
+cro/tables = bpmedd by medcnjd.
+cro/tables = bpmedc by medcnjd.
+
 compute bpmedd_h=-2.
 if (bpmedd=0)|(medcnjd=2) bpmedd_h=0.
 if (bpmedd=1) bpmedd_h=1.
 val labels bpmedd_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedd_h.
+
 compute bpmedc_h=-2.
 if (bpmedc=0)|(medcnjd=2) bpmedc_h=0.
 if (bpmedc=1) bpmedc_h=1.
 val labels bpmedc_h 0 "not on BP med" 1 "on BP med".
-exe.
+fre bpmedc_h.
 
 compute highbp=hy140om2.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
-exe.
-*Cholesterol.
+fre highbp.
+cro/tables = hy140om2 by bpmedd.
+
+*hdlval excludes LLD.
+*hdlchol & hdlval1 are the same.
+
+TEMPORARY.
+sel if lipid=1.
+desc var hdlchol hdlval1 hdlval1old.
+
+*I think you adjust upwards.
+
 compute Hdlval1a = (hdlval1)+ 0.1.
 *adjust upwards as new machinery = 0.1 lower.
+
+*Raised cholesterol.
+*lab values on average 0.1 higher.
+*lab values need to be adjusted downwards for comparability with earlier years.
+*variable provided (cholval1old) so just rename to cholval13.
+
+TEMPORARY.
+sel if cholest>0.
+desc var cholest cholval1old.
+
+temp.
+sel if cholval1>0.
+desc var cholval1 cholval1old.
+
 compute raised=-2.
 if range(cholval1old,0,4.9) raised=0.
 if cholval1old>4.9 raised=1.
 exe.
+
 compute cholval13=cholval1old.
 EXECUTE.
 
 *Lipid.
+cro/tables = lipid by medcnjd.
+
 compute lipid_h=-2.
 if (lipid=0)|(medcnjd=2) lipid_h=0.
 if (lipid=1) lipid_h=1.
 val labels lipid_h 0 "not on lipid" 1 "lipid".
-*CVD med.
+fre lipid_h.
+
+
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
-EXECUTE.
+fre medtyp1_h.
 
 *Diabetes.
-**** use 6.5 for 2011 (48+ after).
 compute diabete3=-11.
 If (Glyhbval>0 & Glyhbval<6.5) & (diabete2=2) diabete3=1.
 If (Glyhbval>0 & diabete2=1) diabete3=2.
@@ -3078,11 +3737,18 @@ Value labels diabete3
 Variable label diabete3 "(D) Diabetes from blood sample (>=6.5%) or doctor diagnosis (excluding pregnancy-only diabetes)".
 missing values diabete3 (-9,-8,-1).
 EXECUTE.
-*CVD risk.
+
+**** use 6.5 for 2011 (48+ after).
+
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
 VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
-exe.
+fre CVD_Risk.
+
+temp.
+sel if CVD_Risk=1.
+desc var sex age cigsta3 bmival2 highbp diabete2/stats=min max mean.
+
 STRING point1 (A8).
 COMPUTE point1 = STRING(psu, F7.0).
 EXECUTE.
@@ -3090,6 +3756,7 @@ compute age_h=age.
 exe.
 
 *Diagnosed BP (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everbp docnurbp.
 compute diag_hbp_h=-99.
 if everbp=2|docnurbp=2 diag_hbp_h=0.
 if everbp=1 & (docnurbp=1) diag_hbp_h=1.
@@ -3097,6 +3764,7 @@ value labels diag_hbp_h 0 "No" 1 "Yes".
 fre diag_hbp_h.
 
 *Diagnosed stroke (missing not coded as no).
+fre everstro docstro.
 compute diag_stroke_h=-99.
 if everstro=2|docstro=2 diag_stroke_h=0.
 if everstro=1 & (docstro=1) diag_stroke_h=1.
@@ -3104,6 +3772,7 @@ value labels diag_stroke_h 0 "No" 1 "Yes".
 fre diag_stroke_h.
 
 *Diagnosed angina (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everangi docangi.
 compute diag_angi_h=-99.
 if everangi=2|docangi=2 diag_angi_h=0.
 if everangi=1 & (docangi=1) diag_angi_h=1.
@@ -3111,6 +3780,7 @@ value labels diag_angi_h 0 "No" 1 "Yes".
 fre diag_angi_h.   
 
 *Diagnosed MI (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everhart docheart.
 compute diag_mi_h=-99.
 if everhart=2|docheart=2 diag_mi_h=0.
 if everhart=1 & (docheart=1) diag_mi_h=1.
@@ -3118,12 +3788,14 @@ value labels diag_mi_h 0 "No" 1 "Yes".
 fre diag_mi_h.  
 
 *Diagnosed diabetes (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everdi docinfo1.
 compute diag_diab_h=-99.
 if everdi=2|docinfo1=2 diag_diab_h=0.
 if everdi=1 & (docinfo1=1) diag_diab_h=1.
 value labels diag_diab_h 0 "No" 1 "Yes".
 fre diag_diab_h. 
  
+
 *Ischaemic heart disease.
 compute diag_isch_h=-99.
 if (diag_mi_h=0 & diag_angi_h=0) diag_isch_h=0.
@@ -3137,7 +3809,7 @@ compute dimed_h = medcindi.
 EXECUTE.
 
 compute year=2011.
-save outfile = "TEMP\HSE2011RF.sav"
+save outfile = "N:\Temp\HSE2011RF.sav"
 /keep hid id year sex age age_h ag16g10 
 sex age origin hhsize maritalb
 tenureb car numcars qimd imd_h
@@ -3173,12 +3845,13 @@ bpmedd bpmedc bpmedd_h bpmedc_h diabete3 lipid lipid_h medtyp1 medtyp1_h medhear
 diag_hbp_h diag_stroke_h diag_angi_h diag_mi_h diag_diab_h diag_isch_h dnnow dnany dnevr  glyhbval glyhb_h puls1om puls2om puls3om.
 
 
-* 2012.
-
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse2012ai.sav'.
+*2012 (ill12m rather than longill).
+DATASET CLOSE ALL.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse2012ai.sav'.
 missing values all ().
 exe.
+desc var wtval wtval2.
+desc var bmival bmival2.
 select if age>=16.
 EXECUTE.
 **Household id.
@@ -3190,6 +3863,7 @@ compute id=pserial.
 EXECUTE.
 formats id(F10.0).
 exe.
+
 compute qrtint=-99.
 if any(mintb,1,2,3) qrtint=1.
 if any(mintb,4,5,6) qrtint=2.
@@ -3199,6 +3873,7 @@ EXECUTE.
 variable label qrtint "Quarter of Interview".
 value labels qrtint 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
 exe.
+
 compute qrtnvis=-99.
 if any(vismon,1,2,3) qrtnvis=1.
 if any(vismon,4,5,6) qrtnvis=2.
@@ -3207,14 +3882,18 @@ if any(vismon,10,11,12) qrtnvis=4.
 EXECUTE.
 variable label qrtnvis "Quarter of Nurse visit".
 value labels qrtnvis 1 "First quarter of year" 2 "Second quarter of year" 3 "Third quarter of year" 4 "Fourth quarter of year".
+fre qrtint qrtnvis.
+
+
 compute imd_h=qimd.
 formats imd_h(F8.2).
 exe.
+
 rename var (gor1 sclass = gor sclass12).
 EXECUTE.
 formats gor(F8.2).
 EXECUTE.
-*marital status.
+
 compute mstatus_h=-2.
 if marstatc=1 mstatus_h=1.
 if marstatc=2 mstatus_h=2.
@@ -3225,7 +3904,8 @@ if marstatc=6 mstatus_h=5.
 if marstatc=7 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
-*minority ethnic group.
+cro/tables = marstatc by mstatus_h.
+
 compute origin5=-2.
 if (origin=1)|(origin=2)|(origin=3)|(origin=4) origin5=1.
 if (origin=13)|(origin=14)|(origin=15) origin5=2.
@@ -3235,6 +3915,7 @@ if (origin=16)|(origin=17)|(origin=18) origin5=5.
 missing values origin5 (-2).
 
 *Ethnicity.
+
 compute origin1=-2.
 if ANy(origin,1,2,3,4) origin1=1.
 if any(origin,5,6,7,8,9,10,11,12,13,14,15,16,17,18) origin1=0.
@@ -3242,19 +3923,26 @@ exe.
 value labels origin1 0 "non-white" 1 "white".
 EXECUTE.
 
-*Urban.
+*Binary urban.
+
+fre urban.
 compute urban_b=-2.
 if urban=1 urban_b=1.
 if any(urban,2,3) urban_b=0.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
+fre urban_b.
+cro/tables = urban by urban_b.
+
+fre urban.
 compute urban3=urban.
 value labels urban3 
 1 "Urban"
 2 "Town & Fringe"
 3 "Village, Hamlet and Isolated Dwelling".
 formats urban3 (F8.2).
-*Social class.
+fre urban3.
+
 compute sclass_h=-2.
 if sclass12=1 sclass_h=1.
 if sclass12=2 sclass_h=2.
@@ -3263,8 +3951,12 @@ if sclass12=3.2 sclass_h=4.
 if sclass12=4 sclass_h=5.
 if sclass12=5 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
-exe.
+cro/tables = sclass12 by sclass_h.
+
+    
+
 *BMI.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -3275,17 +3967,18 @@ EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
 
 *Smoke.
+
 compute smoke=-2.
 if (cigsta3=2|cigsta3=3) smoke=0.
 if cigsta3=1 smoke=1.
 value labels smoke 0 "Non-smoke" 1 "Smoke".
 EXECUTE.
 
-*Alcohol.
 *weekly.
+
 recode totalwug (0=0) (1 thru 4=1) (5=2) (6 thru 7=3) (8=4) (9=5) (else=copy).
 exe.
-*Benefits.
+
 compute benefit1=srcin05c.
 compute benefit2=srcin08c.
 compute benefit3=srcin06c.
@@ -3298,36 +3991,71 @@ compute benefit9=srcin14c.
 exe.
 
 *Hypertension.
+
+*taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd2.
+
+*taking drugs affecting in the last 7 days.
+fre bpmedc2.
+
 compute highbp=hy140om2.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
-exe.
+fre highbp.
+cro/tables = hy140om2 by bpmedd2.
+
+
+*no need to recode using medcnjd.
+cro/tables = bpmedd2 by medcnjd.
+cro/tables = bpmedc2 by medcnjd.
+
 compute bpmedd_h=bpmedd2.
 compute bpmedc_h=bpmedc2.
 EXECUTE.
 
 *Cholesterol.
+*No adjustment.
+*hdlval excludes LLD.
+*hdlchol & hdlval1 are the same.
+
+TEMPORARY.
+sel if lipid2=1.
+desc var hdlchol hdlval12.
+
+*I think you adjust upwards.
+
 compute Hdlval1a = (hdlval12)+ 0.1.
 *adjust upwards as new machinery = 0.1 lower.
+
+*no old variable provided: so adjust the lab values downwards.
 compute cholest2=cholest - 0.1.
 EXECUTE.
+
 compute raised=-2.
 if range(cholest2,0,4.9) raised=0.
 if cholest2>4.9 raised=1.
 EXECUTE.
+
 compute cholval13=cholest2.
 EXECUTE.
+
+*no need to recode using medcnjd.
+cro/tables = lipid2 by medcnjd.
+
 compute lipid_h=lipid2.
 EXECUTE.
-*CVD med.
+
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
+fre medtyp1_h.
 
 *Diabetes.
+
 compute diab3mmol=-11.
 If (ifcca1>0 & ifcca1<48) & (diabete2=2) diab3mmol=1.
 If (ifcca1>0 & diabete2=1) diab3mmol=2.
@@ -3340,7 +4068,7 @@ Value labels diab3mmol
 2 "Doctor diagnosed diabetes"
 3 "Undiagnosed diabetes HbA1c>=48mmol/l".
 Variable label diab3mmol "(D) Diabetes from blood sample (48+mmol/mol) or doctor diagnosis (excluding pregnancy-only diabetes)".
-missing values diab3mmol (-9,-8,-1).
+missing values  diab3mmol (-9,-8,-1).
 EXECUTE.
 
 compute diabete3=-11.
@@ -3357,20 +4085,30 @@ Value labels diabete3
 Variable label diabete3 "(D) Diabetes from blood sample (>=6.5%) or doctor diagnosis (excluding pregnancy-only diabetes)".
 missing values diabete3 (-9,-8,-1).
 
-*CVD risk.
+
+
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
-VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk".
+VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
+fre CVD_Risk.
+
+temp.
+sel if CVD_Risk=1.
+desc var sex age cigsta3 bmival2 highbp diabete2/stats=min max mean.
+
 
 compute psu99=psu.
 EXECUTE.
+
 STRING point1 (A8).
 COMPUTE point1 = STRING(psu99, F7.0).
 EXECUTE.
+
 compute year=2012.
 exe.
 compute age_h=age.
 exe.
+
 compute glyhb_h = glyhbval.
 exe.
 compute glyhb2_h = ifcca1.
@@ -3378,7 +4116,7 @@ exe.
 compute dimed_h = dimed.
 exe.
 
-save outfile = "TEMP\HSE2012RF.sav"
+save outfile = "N:\Temp\HSE2012RF.sav"
 /keep hid id year sex age age_h ag16g10  
 sex age origin hhsize maritalb
 tenureb car numcars qimd imd_h
@@ -3413,12 +4151,13 @@ ifcca1 glyhbval glyhb_h glyhb2_h puls1om puls2om puls3om.
 
 
 * 2013.
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse2013ai.sav'.
+DATASET CLOSE ALL.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse2013ai.sav'.
 missing values all ().
 exe.
 select if age>=16.
 EXECUTE.
+
 **Household id.
 compute hid=hserial.
 EXECUTE.
@@ -3428,6 +4167,7 @@ compute id=pserial.
 EXECUTE.
 formats id(F10.0).
 exe.
+
 rename var (gor1 sclass = gor sclass12).
 EXECUTE.
 formats gor(F8.2).
@@ -3435,7 +4175,7 @@ EXECUTE.
 compute imd_h=qimd.
 formats imd_h(F8.2).
 exe.
-*marital status.
+
 compute mstatus_h=-2.
 if marstatd=1 mstatus_h=1.
 if marstatd=2 mstatus_h=2.
@@ -3445,20 +4185,28 @@ if marstatd=5 mstatus_h=5.
 if marstatd=6 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
+cro/tables = marstatd by mstatus_h.
 
-*Urban.
+*Binary urban.
+
+fre urban.
 compute urban_b=-2.
 if urban=1 urban_b=1.
 if any(urban,2,3) urban_b=0.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
+fre urban_b.
+cro/tables = urban by urban_b.
+
+fre urban.
 compute urban3=urban.
 value labels urban3 
 1 "Urban"
 2 "Town & Fringe"
 3 "Village, Hamlet and Isolated Dwelling".
 formats urban3 (F8.2).
-*Social class.
+fre urban3.
+
 compute sclass_h=-2.
 if sclass12=1 sclass_h=1.
 if sclass12=2 sclass_h=2.
@@ -3467,7 +4215,9 @@ if sclass12=3.2 sclass_h=4.
 if sclass12=4 sclass_h=5.
 if sclass12=5 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
-*Ethnic group.
+cro/tables = sclass12 by sclass_h.
+
+fre origin.
 compute origin5=-2.
 if (origin=1)|(origin=2)|(origin=3)|(origin=4) origin5=1.
 if (origin=13)|(origin=14)|(origin=15) origin5=2.
@@ -3475,7 +4225,10 @@ if (origin=9)|(origin=10)|(origin=11)|(origin=12) origin5=3.
 if (origin=5)|(origin=6)|(origin=7)|(origin=8) origin5=4.
 if (origin=16)|(origin=17)|(origin=18) origin5=5.
 missing values origin5 (-2).
+
+
 *Ethnicity.
+
 compute origin1=-2.
 if ANy(origin,1,2,3,4) origin1=1.
 if any(origin,5,6,7,8,9,10,11,12,13,14,15,16,17,18) origin1=0.
@@ -3484,6 +4237,7 @@ value labels origin1 0 "non-white" 1 "white".
 EXECUTE.
 
 *BMI.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -3494,17 +4248,18 @@ EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
 
 *Smoke.
+
 compute smoke=-2.
 if (cigsta3=2|cigsta3=3) smoke=0.
 if cigsta3=1 smoke=1.
 value labels smoke 0 "Non-smoke" 1 "Smoke".
 EXECUTE.
 
-*alcohol.
 *weekly.
+
 recode totalwug (0=0) (1 thru 4=1) (5=2) (6 thru 7=3) (8=4) (9=5) (else=copy).
 exe.
-*Benefits.
+
 compute benefit1=srcin05c.
 compute benefit2=srcin08c.
 compute benefit3=srcin06c.
@@ -3515,7 +4270,10 @@ compute benefit7=srcin12c.
 compute benefit8=srcin13c.
 compute benefit9=srcin14c.
 exe.
+
+
 *talk to GP in last last month.
+
 compute docmonth=-2.
 if (ndoctalk=1) & (whendoc<0) docmonth=1.
 if (ndoctalk=1) & (whendoc=1) docmonth=1.
@@ -3524,20 +4282,37 @@ if (ndoctalk=2) & whendoc=1 docmonth=1.
 if (ndoctalk=2) & any(whendoc,2,3,4,5,6) docmonth=0.
 variable label docmonth "Talk to GP in last month".
 value labels docmonth 0 "No" 1 "Yes".
+fre docmonth.
+
+
 
 *Hypertension.
+
+*taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd2.
+
+*taking drugs affecting in the last 7 days.
+fre bpmedc2.
+
 compute highbp=hy140om2.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
-exe.
+fre highbp.
+cro/tables = hy140om2 by bpmedd2.
+
+*no need to recode using medcnjd.
+cro/tables = bpmedd2 by medcnjd.
+cro/tables = bpmedc2 by medcnjd.
+
 compute bpmedd_h=bpmedd2.
 compute bpmedc_h=bpmedc2.
 EXECUTE.
 
 missing values docbp pregbp othbp ().
 exe. 
+
 RECODE docbp (-9 thru -2=COPY) (1=1) (2=2) (-1=2) INTO bp1.
 IF (sex=2 & othbp=2) bp1=2.
 IF (ANY(-9,docbp,pregbp,othbp)) bp1=-9.
@@ -3548,10 +4323,28 @@ VALUE LABELS bp1
 2 "No".
 missing values bp1 (-9,-8,-1).
 exe. 
+fre bp1.
+
+temp.
+sel if bp1=1.
+fre medbp.
 
 *Cholesterol.
+
+*hdlval excludes LLD.
+*hdlchol & hdlval1 are the same.
+
+TEMPORARY.
+sel if lipid2=1.
+desc var hdlchol hdlval12.
+
+
+*I think you adjust upwards.
+
 compute Hdlval1a = (hdlval12)+ 0.1.
 *adjust upwards as new machinery = 0.1 lower.
+
+*no old values provided so make the adjustment.
 compute cholest2=cholest - 0.1.
 EXECUTE.
 
@@ -3559,23 +4352,33 @@ compute raised=-2.
 if range(cholest2,0,4.9) raised=0.
 if cholest2>4.9 raised=1.
 EXECUTE.
+
 compute cholval13=cholest2.
 EXECUTE.
+
+*no need to recode using medcnjd.
+cro/tables = lipid2 by medcnjd.
+
 compute lipid_h=lipid2.
 EXECUTE.
 
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
+fre medtyp1_h.
 
 *Diabetes.
+
 compute adjusted=-1.
 if range(qrtnvis,1,3) adjusted=ifcca1.
 if (qrtnvis=4) & range(ifcca1,15,44) adjusted=ifcca1+1.
 if (qrtnvis=4) & range(ifcca1,45,74) adjusted=ifcca1+2.
 if (qrtnvis=4) & range(ifcca1,75,168) adjusted=ifcca1+3.
 exe.
+desc var adjusted.
+
 
 compute iffcvala=-11.
 if range(qrtnvis,1,3) iffcvala=ifcca1.
@@ -3583,9 +4386,11 @@ if (qrtnvis=4) & range(ifcca1,15,44) iffcvala=ifcca1+1.
 if (qrtnvis=4) & range(ifcca1,45,74) iffcvala=ifcca1+2.
 if (qrtnvis=4) & range(ifcca1,75,168) iffcvala=ifcca1+3.
 exe.
+desc var iffcvala.
 
 compute glyhb2_h = iffcvala.
 EXECUTE.
+
 compute diab3mmol=-11.
 If (adjusted>0 & adjusted<48) & (diabete2=2) diab3mmol=1.
 If (adjusted>0 & diabete2=1) diab3mmol=2.
@@ -3598,7 +4403,7 @@ Value labels diab3mmol
 2 "Doctor diagnosed diabetes"
 3 "Undiagnosed diabetes HbA1c>=48mmol/l".
 Variable label diab3mmol "(D) Diabetes from blood sample (48+mmol/mol) or doctor diagnosis (excluding pregnancy-only diabetes)".
-missing values diab3mmol (-9,-8,-1).
+missing values  diab3mmol (-9,-8,-1).
 
 compute diabete3=-11.
 If (Glyhbval>0 & Glyhbval<6.5) & (diabete2=2) diabete3=1.
@@ -3614,24 +4419,31 @@ Value labels diabete3
 Variable label diabete3 "(D) Diabetes from blood sample (>=6.5%) or doctor diagnosis (excluding pregnancy-only diabetes)".
 missing values diabete3 (-9,-8,-1).
 
-*CVD risk.
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
 VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
+fre CVD_Risk.
+
+temp.
+sel if CVD_Risk=1.
+desc var sex age cigsta3 bmival2 highbp diabete2/stats=min max mean.
 
 compute psu99=psu.
 EXECUTE.
 STRING point1 (A8).
 COMPUTE point1 = STRING(psu99, F7.0).
 EXECUTE.
+
 compute age_h=age.
 exe.
+
 compute glyhb_h = glyhbval.
 exe.
 compute dimed_h = dimed.
 exe.
+
 compute year=2013.
-save outfile = "TEMP\HSE2013RF.sav"
+save outfile = "N:\Temp\HSE2013RF.sav"
 /keep hid id year sex age age_h ag16g10 
 sex age origin hhsize marstatd
 tenureb car numcars qimd imd_h
@@ -3667,11 +4479,10 @@ OutPat01 OutPat02 OutPat03 OutPat95 InPat dnnow dnany dnevr
 ifcca1 iffcvala glyhbval glyhb_h glyhb2_h puls1om puls2om puls3om.
 
 
-
-*2014.
-*Urban variable is not right.
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse2014ai.sav'.
+* 2014.
+* urban variable cannot be right.
+DATASET CLOSE ALL.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse2014ai.sav'.
 missing values all ().
 select if ag16g10>=1.
 EXECUTE.
@@ -3687,6 +4498,7 @@ compute id=pserial.
 EXECUTE.
 formats id(F10.0).
 exe.
+
 rename var (gor1 sclass hhsize9 = gor sclass12 hhsize).
 EXECUTE.
 formats gor(F8.2).
@@ -3695,7 +4507,7 @@ compute imd_h=qimd.
 formats imd_h(F8.2).
 exe.
 
-*marital status.
+
 compute mstatus_h=-2.
 if marstatd=1 mstatus_h=1.
 if marstatd=2 mstatus_h=2.
@@ -3705,7 +4517,8 @@ if marstatd=5 mstatus_h=5.
 if marstatd=6 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
-*Social class.
+cro/tables = marstatd by mstatus_h.
+
 compute sclass_h=-2.
 if sclass12=1 sclass_h=1.
 if sclass12=2 sclass_h=2.
@@ -3714,29 +4527,43 @@ if sclass12=3.2 sclass_h=4.
 if sclass12=4 sclass_h=5.
 if sclass12=5 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
-*Minority ethnic group.
+cro/tables = sclass12 by sclass_h.
+
 compute origin5=origin2.
+fre origin5.
 *Ethnicity.
+
 compute origin1=-2.
 if any(origin2,1) origin1=1.
 if any(origin2,2,3,4,5) origin1=0.
 exe.
 value labels origin1 0 "non-white" 1 "white".
-exe.
-*Urban.
+fre origin1.
+
+
+*Binary urban.
+
+fre urban.
 compute urban_b=-2.
 if urban=1 urban_b=1.
 if any(urban,2,3) urban_b=0.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
+fre urban_b.
+cro/tables = urban by urban_b.
+
+
+fre urban.
 compute urban3=urban.
 value labels urban3 
 1 "Urban"
 2 "Town & Fringe"
 3 "Village, Hamlet and Isolated Dwelling".
 formats urban3 (F8.2).
+fre urban3.
 
 *talk to GP in last last month.
+
 compute docmonth=-2.
 if (ndoctalk=1) & (whendoc<0) docmonth=1.
 if (ndoctalk=1) & (whendoc=1) docmonth=1.
@@ -3745,8 +4572,11 @@ if (ndoctalk=2) & whendoc=1 docmonth=1.
 if (ndoctalk=2) & any(whendoc,2,3,4,5,6) docmonth=0.
 variable label docmonth "Talk to GP in last month".
 value labels docmonth 0 "No" 1 "Yes".
+fre docmonth.
+
 
 *BMI.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -3757,17 +4587,18 @@ EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
 
 *Smoke.
+
 compute smoke=-2.
 if (cigsta3=2|cigsta3=3) smoke=0.
 if cigsta3=1 smoke=1.
 value labels smoke 0 "Non-smoke" 1 "Smoke".
 EXECUTE.
 
-*Alcohol.
 *weekly.
+
 recode totalwug (0=0) (1 thru 4=1) (5=2) (6 thru 7=3) (8=4) (9=5) (else=copy).
 exe.
-*Benefits.
+
 compute benefit1=srcin05c.
 compute benefit2=srcin08c.
 compute benefit3=srcin06c.
@@ -3778,20 +4609,49 @@ compute benefit7=srcin12c.
 compute benefit8=srcin13c.
 compute benefit9=srcin14c.
 exe.
-    
+
+
+
 *Hypertension.
+
+*taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd2.
+
+*taking drugs affecting in the last 7 days.
+fre bpmedc2.
+
 compute highbp=hy140om2.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
+fre highbp.
+cro/tables = hy140om2 by bpmedd2.
+
+*no need to recode using medcnjd.
+cro/tables = bpmedd2 by medcnjd.
+cro/tables = bpmedc2 by medcnjd.
+
 compute bpmedd_h=bpmedd2.
 compute bpmedc_h=bpmedc2.
 EXECUTE.
 
 *Cholesterol.
+*lab values on averge 0.1 higher.
+*lab values need to be adjusted downwards.
+*hdlval excludes LLD.
+*hdlchol & hdlval1 are the same.
+
+TEMPORARY.
+sel if lipid2=1.
+desc var hdlchol hdlval12.
+
+*I think you adjust upwards.
+
 compute Hdlval1a = (hdlval12)+ 0.1.
 *adjust upwards as new machinery = 0.1 lower.
+
+*no old provided so make adjustment.
 compute adjusted=cholest - 0.1.
 EXECUTE.
 
@@ -3799,19 +4659,27 @@ compute raised=-2.
 if range(adjusted,0,4.9) raised=0.
 if adjusted>4.9 raised=1.
 EXECUTE.
+
 compute cholval13=adjusted.
 EXECUTE.
+
+*no need to recode using medcnjd.
+cro/tables = lipid2 by medcnjd.
+
 compute lipid_h=lipid2.
 EXECUTE.
 
-*CVD meds.
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
+fre medtyp1_h.
+
 
 *Diabetes.
-*Reproduce the new adjustment from the old.
+* Reproduce the new adjustment from the old (CORRECT).
+
 compute iffcvala=-11.
 if range(ifcca1,15,44) iffcvala=ifcca1+1.
 if range(ifcca1,45,74) iffcvala=ifcca1+2.
@@ -3820,6 +4688,7 @@ exe.
 desc var iffcvala.
 compute glyhb2_h = iffcvala.
 exe.
+
 
 compute diab3mmol=-11.
 If (iffcvala>0 & iffcvala<48) & (diabete2=2) diab3mmol=1.
@@ -3833,7 +4702,7 @@ Value labels diab3mmol
 2 "Doctor diagnosed diabetes"
 3 "Undiagnosed diabetes HbA1c>=48mmol/l".
 Variable label diab3mmol "(D) Diabetes from blood sample (48+mmol/mol) or doctor diagnosis (excluding pregnancy-only diabetes)".
-missing values diab3mmol (-9,-8,-1).
+missing values  diab3mmol (-9,-8,-1).
 
 compute diabete3=-11.
 If (Glyhbval>0 & Glyhbval<6.5) & (diabete2=2) diabete3=1.
@@ -3849,10 +4718,15 @@ Value labels diabete3
 Variable label diabete3 "(D) Diabetes from blood sample (>=6.5%) or doctor diagnosis (excluding pregnancy-only diabetes)".
 missing values diabete3 (-9,-8,-1).
 
-*CVD risk.
+
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
 VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
+
+
+temp.
+sel if CVD_Risk=1.
+desc var sex age cigsta3 bmival2 highbp diabete2/stats=min max mean.
 
 compute psu99=psu.
 EXECUTE.
@@ -3865,13 +4739,16 @@ compute age_h=age.
 EXECUTE.
 if age>=90 age_h=92.
 exe.
+
 compute glyhb_h = glyhbval.
 exe.
 compute dimed_h = dimed.
 exe.
 
+fre OutPat01 OutPat02 OutPat03 OutPat95 InPat.
+
 compute year=2014.
-save outfile = "TEMP\HSE2014RF.sav"
+save outfile = "N:\Temp\HSE2014RF.sav"
 /keep hid id year sex age age_h ag16g10  origin2  marstatd
 tenureb car numcars qimd imd_h
 genhelf2 porfv
@@ -3906,17 +4783,19 @@ diabete3 diab3mmol ndoctalk whendoc  docmonth lipid2 lipid_h medtyp1 medtyp1_h i
 OutPat01 OutPat02 OutPat03 OutPat95 InPat dnnow dnany dnevr
 ifcca1 iffcvala glyhbval glyhb_h glyhb2_h puls1om puls2om puls3om.
 
-*2015 Special License.
-*2015.
 
+
+*2015 special license.
+*2015.
 DATASET CLOSE ALL.
-GET FILE='S:\FPHS_EPH_HSE_Shared\Expose\UKDA-8372-spss\spss\spss24\hse_2015_sl_v1_protect.sav'.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse_2015_sl_v1_protect.sav'.
 select if ag16g10>=1.
 exe.
 compute age_h=age90.
 EXECUTE.
 if age_h>=90 age_h=92.
 exe.
+
 **Household id.
 compute hid=hserial.
 EXECUTE.
@@ -3933,7 +4812,7 @@ exe.
 compute imd_h=qimd.
 formats imd_h(F8.2).
 exe.
-*marital status.
+
 compute mstatus_h=-2.
 if marstatd=1 mstatus_h=1.
 if marstatd=2 mstatus_h=2.
@@ -3943,16 +4822,22 @@ if marstatd=5 mstatus_h=5.
 if marstatd=6 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
+cro/tables = marstatd by mstatus_h.
 
-*Urban.
+
+*Binary urban.
+fre urban14b.
 compute urban_b=-2.
 if urban14b=1 urban_b=1.
 if any(urban14b,2,3) urban_b=0.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
+fre urban_b.
+cro/tables = urban14b by urban_b.
+
 rename var (sclass hhsize6 = sclass12 hhsize).
 EXECUTE.
-*Social class.
+
 compute sclass_h=-2.
 if sclass12=1 sclass_h=1.
 if sclass12=2 sclass_h=2.
@@ -3961,17 +4846,20 @@ if sclass12=3.2 sclass_h=4.
 if sclass12=4 sclass_h=5.
 if sclass12=5 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
-*Minority ethnic group.
+cro/tables = sclass12 by sclass_h.
+
 compute origin5=origin2.
+fre origin5.
 *Ethnicity.
+
 compute origin1=-2.
 if any(origin2,1) origin1=1.
 if any(origin2,2,3,4,5) origin1=0.
 exe.
 value labels origin1 0 "non-white" 1 "white".
-exe.
 
-*Talk to GP in last last month.
+*talk to GP in last last month.
+
 compute docmonth=-2.
 if (ndoctalk=1) & (whendoc<0) docmonth=1.
 if (ndoctalk=1) & (whendoc=1) docmonth=1.
@@ -3980,8 +4868,11 @@ if (ndoctalk=2) & whendoc=1 docmonth=1.
 if (ndoctalk=2) & any(whendoc,2,3,4,5,6) docmonth=0.
 variable label docmonth "Talk to GP in last month".
 value labels docmonth 0 "No" 1 "Yes".
+fre docmonth.
+
 
 *BMI.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -3992,17 +4883,18 @@ EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
 
 *Smoke.
+
 compute smoke=-2.
 if (cigsta3=2|cigsta3=3) smoke=0.
 if cigsta3=1 smoke=1.
 value labels smoke 0 "Non-smoke" 1 "Smoke".
 EXECUTE.
 
-*Alcohol.
 *weekly
+
 recode totalwug (0=0) (1 thru 4=1) (5=2) (6 thru 7=3) (8=4) (9=5) (else=copy).
 exe.
-*Benefits.
+
 compute benefit1=srcin05c.
 compute benefit2=srcin08c.
 compute benefit3=srcin06c.
@@ -4015,36 +4907,87 @@ compute benefit9=srcin14c.
 exe
     
 *Hypertension.
+
+*taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd2.
+
+*taking drugs affecting in the last 7 days.
+fre bpmedc2.
+
+
 compute highbp=hy140om2.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
-exe.
+fre highbp.
+cro/tables = hy140om2 by bpmedd2.
+
+
+*no need to recode using medcnjd.
+cro/tables = bpmedd2 by medcnjd.
+cro/tables = bpmedc2 by medcnjd.
 
 compute bpmedd_h=bpmedd2.
 compute bpmedc_h=bpmedc2.
 EXECUTE.
-compute cholest2=cholest - 0.1.
-EXECUTE.
-compute cholval13=cholest2.
+
+*Cholesterol.
+
+TEMPORARY.
+sel if lipid2=1.
+desc var Hdlval1a.
+
+*This is the variable needed.
+*comparable = Hdlval1a.
+*compute Hdlval1a = -99.
+*if cholflag3 = 1 Hdlval1a = hdlval12+0.1.
+*if cholflag3 = 2 Hdlval1a = hdlval13+0.2.
+*if hdlok2
+    
+*Change of equipment June 2015: measured total cholesterol were on average 0.1mmol/L lower. 
+*adjust downwards to June 2015; leave unadjusted after that.
+
+
+*This is the variable needed  (Cholval1a): adjustment prior to June' no adjustment after.    
+compute b1 = -99.
+if cholflag3 = 1 b1 = cholest-0.1.
+if cholflag3 = 2 b1 = cholest.
+exe.
+
+temp.
+sel if cholval1a>0.    
+desc var b1 Cholval1a cholest.
+
+*compute cholest2=cholest - 0.1.
+*EXECUTE.
+
+compute cholval13=Cholval1a.
 EXECUTE.
 
 compute raised=-2.
-if range(cholest2,0,4.9) raised=0.
-if cholest2>4.9 raised=1.
+if range(Cholval1a,0,4.9) raised=0.
+if Cholval1a>4.9 raised=1.
 EXECUTE.
+
+*no need to recode using medcnjd.
+cro/tables = lipid2 by medcnjd.
+
 compute lipid_h=lipid2.
 EXECUTE.
 
-*CVD med.
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
+fre medtyp1_h.
 
 *Diabetes.
-compute diab3mmol=-11.
+
+desc var iffcvala.
+
+compute  diab3mmol=-11.
 If (iffcvala>0 & iffcvala<48) & (diabete2=2) diab3mmol=1.
 If (iffcvala>0 & diabete2=1) diab3mmol=2.
 If (iffcvala>=48) & (diabete2=2) diab3mmol=3.
@@ -4056,14 +4999,19 @@ Value labels diab3mmol
 2 "Doctor diagnosed diabetes"
 3 "Undiagnosed diabetes HbA1c>=48mmol/l".
 Variable label diab3mmol "(D) Diabetes from blood sample (48+mmol/mol) or doctor diagnosis (excluding pregnancy-only diabetes)".
-missing values diab3mmol (-9,-8,-1).
+missing values  diab3mmol (-9,-8,-1).
+
 compute glyhb2_h = iffcvala.
 exe.
 
-*CVD risk.
+
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
 VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
+
+temp.
+sel if CVD_Risk=1.
+desc var sex age16g5 cigsta3 bmival2 highbp diabete2/stats=min max mean.
 
 compute psu99=psu.
 EXECUTE.
@@ -4071,15 +5019,18 @@ STRING point1 (A8).
 COMPUTE point1 = STRING(psu99, F7.0).
 EXECUTE.
 
+desc var glyhb glyhbvala.
+
 compute glyhb_h = glyhbvala.
 exe.
+
 missing values dimed ().
 EXECUTE.
 compute dimed_h = dimed.
 exe.
 
 compute year=2015.
-save outfile = "TEMP\HSE2015RF.sav"
+save outfile = "N:\Temp\HSE2015RF.sav"
 /keep id hid year sex age_h age90 Age16g5 ag16g10 
 origin2  marstatd
 tenureb car numcars qimd imd_h
@@ -4116,13 +5067,15 @@ glyhb glyhbvala glyhb_h glyhb2_h ifcca1 iffcvala puls1om puls2om puls3om
 /rename (porftvg15 = porftvg).
 
 
-* 2016.
 
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse2016_eul.sav'.
+* 2016.
+DATASET CLOSE ALL.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse2016_eul.sav'.
+
 missing values all ().
 select if ag16g10>=1.
 exe.
+fre age16g5.
 *midpoint.
 compute age_h=-99.
 if (age16g5=1) age_h=16.5.
@@ -4145,10 +5098,12 @@ if (age16g5=17) age_h=92.
 EXECUTE.
 missing values all ().
 exe.
+
 compute id=seriala.
 EXECUTE.
 formats id(F10.0).
 exe.
+
 rename var (gor1 sclass hhsize6 tenureb2 = gor sclass12 hhsize tenureb).
 EXECUTE.
 formats gor(F8.2).
@@ -4156,7 +5111,7 @@ EXECUTE.
 compute imd_h=qimd.
 formats imd_h(F8.2).
 exe.
-*marital status.
+
 compute mstatus_h=-2.
 if marstatd=1 mstatus_h=1.
 if marstatd=2 mstatus_h=2.
@@ -4166,14 +5121,18 @@ if marstatd=5 mstatus_h=5.
 if marstatd=6 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
+cro/tables = marstatd by mstatus_h.
 
-*Urban.
+*Binary urban.
+fre urban14b.
 compute urban_b=-2.
 if urban14b=1 urban_b=1.
 if any(urban14b,2,3) urban_b=0.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
-*Social class.
+fre urban_b.
+cro/tables = urban14b by urban_b.
+
 compute sclass_h=-2.
 if sclass12=1 sclass_h=1.
 if sclass12=2 sclass_h=2.
@@ -4182,15 +5141,20 @@ if sclass12=3.2 sclass_h=4.
 if sclass12=4 sclass_h=5.
 if sclass12=5 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
-*Minority ethnic group.
+cro/tables = sclass12 by sclass_h.
+
 compute origin5=origin2.
+fre origin5.
 *Ethnicity.
+
 compute origin1=-2.
 if any(origin2,1) origin1=1.
 if any(origin2,2,3,4,5) origin1=0.
 exe.
 value labels origin1 0 "non-white" 1 "white".
+
 *BMI.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -4201,17 +5165,18 @@ EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
 
 *Smoke.
+
 compute smoke=-2.
 if (cigsta3=2|cigsta3=3) smoke=0.
 if cigsta3=1 smoke=1.
 value labels smoke 0 "Non-smoke" 1 "Smoke".
 EXECUTE.
 
-*Alcohol.
-*weekly.
+*weekly
+
 recode totalwug (0=0) (1 thru 4=1) (5=2) (6 thru 7=3) (8=4) (9=5) (else=copy).
 exe.
-*Benefits.
+
 compute benefit1=srcin05d.
 compute benefit2=srcin08d.
 compute benefit3=srcin06d.
@@ -4224,36 +5189,68 @@ compute benefit9=srcin15d.
 compute benefit10=srcin14d.
 exe.
 
+
+
+
 *Hypertension.
+
+*taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd2.
+
+*taking drugs affecting in the last 7 days.
+fre bpmedc2.
+
 compute highbp=hy140om2.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
-exe.
+fre highbp.
+cro/tables = hy140om2 by bpmedd2.
+
+*no need to recode using medcnjd.
+cro/tables = bpmedd2 by medcnjd.
+cro/tables = bpmedc2 by medcnjd.
+
 compute bpmedd_h=bpmedd2.
 compute bpmedc_h=bpmedc2.
 EXECUTE.
 
 *Cholesterol.
-compute cholest2=cholest - 0.1.
+TEMPORARY.
+sel if lipid2=1.
+desc var hdlchol Hdlval1a.
+
+*need unadjusted values for comparability with pre-2010.
+
+TEMPORARY.
+sel if cholval1a>0.
+desc var cholest Cholval1a.
+
+
+compute cholval13=Cholval1a.
 EXECUTE.
-compute cholval13=cholest2.
-EXECUTE.
+
 compute raised=-2.
-if range(cholest2,0,4.9) raised=0.
-if cholest2>4.9 raised=1.
+if range(Cholval1a,0,4.9) raised=0.
+if Cholval1a>4.9 raised=1.
 EXECUTE.
+
+*no need to recode using medcnjd.
+cro/tables = lipid2 by medcnjd.
+
 compute lipid_h=lipid2.
 EXECUTE.
 
-*CVD med.
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
+fre medtyp1_h.
 
 *Diabetes.
+desc var  iffcvala.
 compute diab3mmol=-11.
 If (iffcvala>0 & iffcvala<48) & (diabete2=2) diab3mmol=1.
 If (iffcvala>0 & diabete2=1) diab3mmol=2.
@@ -4271,22 +5268,32 @@ missing values  diab3mmol (-9,-8,-1).
 compute glyhb2_h = iffcvala.
 exe.
 
-*CVD risk.
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
 VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
+fre CVD_Risk.
+
+temp.
+sel if CVD_Risk=1.
+desc var sex age16g5 cigsta3 bmival2 highbp diabete2/stats=min max mean.
 
 compute psu99=psu.
 EXECUTE.
+
 STRING point1 (A8).
 COMPUTE point1 = STRING(psu99, F7.0).
 EXECUTE.
+
+desc var glyhb glyhbvala.
+
 compute glyhb_h = glyhbvala.
 exe.
+
 compute dimed_h = dimed.
 exe.
+
 compute year=2016.
-save outfile = "TEMP\HSE2016RF.sav"
+save outfile = "N:\Temp\HSE2016RF.sav"
 /keep id year sex Age16g5 ag16g10 age_h
 origin2 marstatd
 tenureb car numcars qimd imd_h
@@ -4323,10 +5330,12 @@ bpmedd2 bpmedc2 bpmedd_h bpmedc_h
 
 
 *2017.
-DATASET CLOSE All.
-GET FILE='BASE_DIRECTORY\hse17i_eul_v1.sav'.
+
+DATASET CLOSE ALL.
+GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse17i_eul_v1.sav'.
 missing values all ().
 exe.
+
 select if ag16g10>=1.
 exe.
 compute age_h=-99.
@@ -4360,7 +5369,7 @@ EXECUTE.
 compute imd_h=qimd.
 formats imd_h(F8.2).
 exe.
-*marital status.
+
 compute mstatus_h=-2.
 if marstatd=1 mstatus_h=1.
 if marstatd=2 mstatus_h=2.
@@ -4370,14 +5379,18 @@ if marstatd=5 mstatus_h=5.
 if marstatd=6 mstatus_h=9.
 var label mstatus_h "marital status harmonised".
 val labels mstatus_h 1 "single" 2 "married" 3 "separated" 4 "divorced" 5 "widowed" 9 "cohabitees".
+cro/tables = marstatd by mstatus_h.
 
-*Urban.
+*Binary urban.
+fre urban14br.
 compute urban_b=-2.
 if urban14br=1 urban_b=1.
 if any(urban14br,2,3) urban_b=0.
 var label urban_b "Binary urban".
 val labels urban_b 0 "Not urban" 1 "Urban".
-*Social class.
+fre urban_b.
+cro/tables = urban14br by urban_b.
+
 compute sclass_h=-2.
 if sclass12=1 sclass_h=1.
 if sclass12=2 sclass_h=2.
@@ -4386,18 +5399,23 @@ if sclass12=3.2 sclass_h=4.
 if sclass12=4 sclass_h=5.
 if sclass12=5 sclass_h=6.
 val labels sclass_h 1 "I" 2 "II" 3 "IIIN" 4 "IIIM" 5 "IV" 6 "V".
+cro/tables = sclass12 by sclass_h.
 
 rename variables (CVD1 CVD2 CVD3 CVD4 CVD5 CVD6 CVD7 CVD8 cdiabete = everbp everangi everhart evermur everireg everoht everstro everdi docinfo1).
 exe.
-*Minority ethnic group.
+
 compute origin5=origin2.
+fre origin5.
 *Ethnicity.
+
 compute origin1=-2.
 if any(origin2,1) origin1=1.
 if any(origin2,2,3,4,5) origin1=0.
 exe.
 value labels origin1 0 "non-white" 1 "white".
+
 *BMI.
+
 compute bmivg52=-2.
 if range(bmival2,0,18.4999) bmivg52=0.
 if range(bmival2,18.5,24.9999) bmivg52=1.
@@ -4408,13 +5426,14 @@ EXECUTE.
 value labels bmivg52 0 "Underweight" 1 "Normal-weight" 2 "Overweight" 3 "Obese I" 4 "Obese II".
 
 *Smoke.
+
 compute smoke=-2.
 if (cigsta3=2|cigsta3=3) smoke=0.
 if cigsta3=1 smoke=1.
 value labels smoke 0 "Non-smoke" 1 "Smoke".
 EXECUTE.
 
-*Benefits.
+
 compute benefit1=srcin05d.
 compute benefit2=srcin08d.
 compute benefit3=srcin06d.
@@ -4426,43 +5445,90 @@ compute benefit8=srcin13d.
 compute benefit9=srcin15d.
 compute benefit10=srcin14d.
 exe.
-
+    
 *Hypertension.
+
+*taking drugs prescribed for high BP in the last 7 days.
+fre bpmedd2.
+
+*taking drugs affecting in the last 7 days.
+fre bpmedc2.
+
 compute highbp=hy140om2.
 VALUE LABELS highbp 1 'Normotensive untreated' 
 2 'Normotensive treated' 
 3 'Hypertensive treated' 
 4 'Hypertensive untreated'.
+fre highbp.
+cro/tables = hy140om2 by bpmedd2.
+
+*no need to recode using medcnjd.
+cro/tables = bpmedd2 by medcnjd.
+cro/tables = bpmedc2 by medcnjd.
+
 compute bpmedd_h=bpmedd2.
 compute bpmedc_h=bpmedc2.
 EXECUTE.
 
-*Cholesterol.
+
+*Cholesterol = cholval13 (unadjusted).
+TEMPORARY.
+sel if lipid2=1.
+desc var hdlchol Hdlval1a.
+
+
+desc var cholval13.
+
 compute raised=-2.
 if range(cholval13,0,4.9) raised=0.
 if cholval13>4.9 raised=1.
 exe.
+
+TEMPORARY.
+sel if lipid2=0.
+desc var cholest cholvala cholval1a cholval3 cholval13.
+
+TEMPORARY.
+sel if lipid2=1.
+desc var cholest cholvala cholval1a cholval3 cholval13.
+
+
+*no need to recode using medcnjd.
+cro/tables = lipid2 by medcnjd.
+
 compute lipid_h=lipid2.
 EXECUTE.
 
-*CVD med.
+
+fre medtyp1.
 compute medtyp1_h=-2.
 if (medtyp1=0) medtyp1_h=0.
 if (medtyp1=1) medtyp1_h=1.
 val labels medtyp1_h 0 "not on CVDmed" 1 "CVDmed".
+fre medtyp1_h.
 
-*CVD risk.
+
+fre diabete3.
+fre diab3mmol.
+
 compute CVD_Risk=-2.
 if (cigsta3>0) & (bmival2>0) & (highbp>0) & (diabete2>0) CVD_Risk=1.
 VARIABLE LABELS CVD_Risk "(D) Valid information for CVD_Risk" .
+fre CVD_Risk.
+
+temp.
+sel if CVD_Risk=1.
+desc var sex age16g5 cigsta3 bmival2 highbp diabete2/stats=min max mean.
 
 compute psu99=psu.
 EXECUTE.
+
 STRING point1 (A8).
 COMPUTE point1 = STRING(psu99, F7.0).
 EXECUTE.
 
 *Diagnosed BP (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everbp docbp.
 compute diag_hbp_h=-99.
 if everbp=2|docbp=2 diag_hbp_h=0.
 if everbp=1 & (docbp=1) diag_hbp_h=1.
@@ -4470,6 +5536,7 @@ value labels diag_hbp_h 0 "No" 1 "Yes".
 fre diag_hbp_h.
 
 *Diagnosed stroke (missing not coded as no).
+fre everstro docstro.
 compute diag_stroke_h=-99.
 if everstro=2|docstro=2 diag_stroke_h=0.
 if everstro=1 & (docstro=1) diag_stroke_h=1.
@@ -4477,6 +5544,7 @@ value labels diag_stroke_h 0 "No" 1 "Yes".
 fre diag_stroke_h.
 
 *Diagnosed angina (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everangi docangi.
 compute diag_angi_h=-99.
 if everangi=2|docangi=2 diag_angi_h=0.
 if everangi=1 & (docangi=1) diag_angi_h=1.
@@ -4484,6 +5552,7 @@ value labels diag_angi_h 0 "No" 1 "Yes".
 fre diag_angi_h.   
 
 *Diagnosed MI (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everhart docheart.
 compute diag_mi_h=-99.
 if everhart=2|docheart=2 diag_mi_h=0.
 if everhart=1 & (docheart=1) diag_mi_h=1.
@@ -4491,27 +5560,34 @@ value labels diag_mi_h 0 "No" 1 "Yes".
 fre diag_mi_h.  
 
 *Diagnosed diabetes (regardless of diagnosed only if pregnant; missing not coded as no).
+fre everdi docinfo1.
 compute diag_diab_h=-99.
 if everdi=2|docinfo1=2 diag_diab_h=0.
 if everdi=1 & (docinfo1=1) diag_diab_h=1.
 value labels diag_diab_h 0 "No" 1 "Yes".
 fre diag_diab_h. 
  
+
 *Ischaemic heart disease.
 compute diag_isch_h=-99.
 if (diag_mi_h=0 & diag_angi_h=0) diag_isch_h=0.
 if (diag_mi_h=1 | diag_angi_h=1) diag_isch_h=1.
 value labels diag_isch_h 0 "No" 1 "Yes".
+fre diag_isch_h.
+
+desc var glyhb glyhbvala.
 
 compute glyhb_h = glyhbvala.
 exe.
+
 compute glyhb2_h = iffcvala.
 exe.
+
 compute dimed_h = dimed.
 exe.
 
 compute year=2017.
-save outfile = "TEMP\HSE2017RF.sav"
+save outfile = "N:\Temp\HSE2017RF.sav"
 /keep id year 
 psu cluster cluster_nurse cluster_blood 
 sex Age16g5 ag16g10 age_h
@@ -4553,8 +5629,7 @@ ifcca1 iffcvala glyhb glyhbvala glyhb_h glyhb2_h puls1om puls2om puls3om
 /rename (totalwug2 cinsulin porftvg15 =totalwug insulin porftvg).
 
 
-
-*Put the datasets together.
+*1998; 2003-2017.
 
 dataset close all.
 get file = "N:\Temp\HSE1998RF.sav".
@@ -4574,20 +5649,22 @@ add files/file=*/file= "N:\Temp\HSE2014RF.sav".
 add files/file=*/file= "N:\Temp\HSE2015RF.sav".
 add files/file=*/file= "N:\Temp\HSE2016RF.sav".
 add files/file=*/file= "N:\Temp\HSE2017RF.sav".
-add files/file=*/file= "N:\Temp\HSE2018RF.sav".
-add files/file=*/file= "N:\Temp\HSE2019RF.sav".
 exe.
 
 *number of cars.
+
 if car=2 numcars=0.
 exe.
 
 *BPmedicine.
+
 compute BPmed=-2.
 if any(highbp,1,4) BPmed=0.
 if any(highbp,2,3) BPmed=1.
 VARIABLE LABELS  BPmed "(D) Prescribed drugs for high BP" .
 VALUE LABELS  BPmed 0 "No" 1 "Yes".
+cro/tables = highbp by BPmed.
+
 
 VARIABLE LABELS  
 benefit1 "Jobseekers Allowance" 
@@ -4603,6 +5680,7 @@ benefit10 "Universal credit".
 
 value labels imd_h 1 "least deprived" 2 "2" 3 "3" 4 "4" 5 "most deprived".
 exe.
+
 value labels dimed_h 1 "Yes" 2 "No".
 exe.
 variable label diag_hbp_h "Diagnosed high bp".
@@ -4611,6 +5689,7 @@ variable label diag_angi_h "Diagnosed angina".
 variable label diag_mi_h "Diagnosed MI".
 variable label diag_diab_h "Diagnosed diabetes".
 variable label diag_isch_h "Diagnosed IHD".
+EXECUTE.
 variable label bpmedd_h "Taking BP medications for stated high bp".
 variable label bpmedc_h "Taking BP medications".
 variable label dimed_h "medications for diabetes".
@@ -4618,8 +5697,9 @@ variable label dimed_h "medications for CVD".
 variable label lipid_h "lipids".
 variable label glyhb_h "hba1c in %".
 variable label glyhb2_h "hba1c in mmol/mol".
+exe.
 
-SAVE TRANSLATE OUTFILE='OUT\HSE1998-2017.dta'
+SAVE TRANSLATE OUTFILE='HSE1998-2017.dta'
   /TYPE=STATA
   /VERSION=14
   /EDITION=SE
@@ -4628,7 +5708,7 @@ SAVE TRANSLATE OUTFILE='OUT\HSE1998-2017.dta'
   /keep id hid point1 year mintb vismon qrtint qrtnvis
 wt_int wt_int_s1 wt_int_s2 
 wt_nurse wt_nurse_s1 wt_nurse_s2
-wt_blood wt_blood_s1 wt_blood_s2
+wt_blood wt_blood_s1 wt_blood_s2 cluster
 CVD_risk sex age_h gor imd_h hhsize
   tenureb urban_b numcars mstatus_h
   origin5 sclass_h topqual3 eqv5
@@ -4652,6 +5732,7 @@ bp1 strodef angidef heartdef murmur1 iregdef ohtdef diabete2 ihdis cvdis
 docnurbp docbp docstro docangi docheart murdoc docireg docinfo1 diabetes docoht
 docmonth ndoctalk whendoc inpat outpat outpat01 outpat02 outpat03 outpat95
 pregnowb pregntj pill3 pillevr pilluse medtyp14
+nuroutc
 htval wtval2 bmival2
 wstval waist1 waist2 waist3
 hipval hip1 hip2 hip3 whval
@@ -4672,7 +5753,14 @@ wt_int samptype pulse1 pulse2 pulse3
 puls1om puls2om puls3om.
 
 
-    
+
+
+
+
+
+
+
+
 
 
 
