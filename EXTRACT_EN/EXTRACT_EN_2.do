@@ -5,7 +5,7 @@
 * OUTPUT: Consolidated, harmonised EXPOSE ENGLAND DATASET (EXPOSE_EN.dta)                                                                            *
 *                                                                                                                                                    *
 * Kafui Adjaye-Gbewonyo (k.adjayegbewonyo@greenwich.ac.uk)                                                                                           *
-* Version 1.1                                                                                                                                        *
+* Version 1.2                                                                                                                                        *
 ******************************************************************************************************************************************************
 
 clear
@@ -16,7 +16,7 @@ set more off
 ******************************************************************************************************************************************************
 
 * BASE DATA DIRECTORY 
-global BASEDIR "G:\My Drive\Work\MRC\Projects\Current\HealthTransitions\Analyses\code\0 - EXTRACT_EN"      // Insert here the path of the base directory which containg the HSE1998-2017.dta dataset 
+global BASEDIR "****************"      // Insert here the path of the base directory which containg the HSE1998-2017.dta dataset 
 
 * OUTPUT DIRECTORY
 global OUT "./OUT"
@@ -25,11 +25,13 @@ global OUT "./OUT"
 * LOAD DATA                                                                                                                                          * 
 ******************************************************************************************************************************************************
 
-use "$BASEDIR/HSE1998-2017_15102024 v2.dta", clear 
+use "$BASEDIR/HSE1998-2017.dta", clear   
 
 ******************************************************************************************************************************************************
 * DEFINE LABELS                                                                                                                                      * 
 ******************************************************************************************************************************************************
+
+label drop _all
 
 label define vyesno 0 "No" 1 "Yes"
 label define vsmokstatus 0 "Never smoker" 1 "Former smoker" 2 "Current smoker"
@@ -44,7 +46,7 @@ label define vself_health 1 "Poor/bad" 2 "Average/fair" 3 "Good" 4 "Very good/ex
 label define vgeotype2   1 "Urban"  2 "Non-urban" 
 label define vedu_e 0 "No qualification" 1 "NVQ1/CSE other grade equiv" 2  "NVQ2/GCE O Level equiv" 3 "NVQ3/GCE A Level equiv"  ///
                     4 " Higher ed below degree" 5 "NVQ4/NVQ5/Degree or equiv" 9999 "Foreign/Other"
-label define vocc 0 "Unemployed" 1 "Unskilled manual" 2 "Semi-skilled manual" 3 "Skilled manual" 4 "Skilled non-manual" 5 "Managerial technical"  ///
+label define vocc 0 "Not applicable" 1 "Unskilled manual" 2 "Semi-skilled manual" 3 "Skilled manual" 4 "Skilled non-manual" 5 "Managerial technical"  ///
                   6 "Professional" 9999 "Other/not fully described"	
 label define vhh_size_cat 1 "1" 2 "2" 3 "3" 4 "4" 5 "5" 6 "6+"
 label define vownhome2 0 "No" 1 "Mortgage/shared ownership" 2 "Own it outright"
@@ -169,11 +171,9 @@ gen pid = year_s + id2_s
 destring pid, replace
  label var pid "Individual unique identifier"
 
-
 *Time
 gen time=year-1998
 label var time "Years since 1998"
-
 
 rename mintb intm
 label var intm "Month of interview"
@@ -260,7 +260,6 @@ recode hhsize (1=1) (2=2) (3=3) (4=4) (5=5) (6/12=6), gen(hh_size_cat)
 label variable hh_size_cat "Household size (categories)"
 label values hh_size_cat vhh_size_cat
 
-
 *Education
 codebook topqual3
 sum age2 if topqual3==-1
@@ -268,7 +267,6 @@ recode topqual3 (-9/-8=.) (-1=0) (5=1) (4=2) (3=3) (2=4) (1=5) (6=9999) (7=0), g
 label var edu_e "Educational qualifications, England"
 label values edu_e vedu_e
 *Those with 'Item not applicable' were coded as having No qualification--assuming they are still in school
-		  	  
 
 *Occupation
 
@@ -287,14 +285,75 @@ replace occupation=6 if sclass==1 | sclass12==1
 label variable occupation "Social class/occupation"
 label values occupation vocc
 
-recode occupation (0=0) (1/9999=1), gen(emp)
+recode activb (-99/-1 =.) (1=0) (2/4=1) (5/95=0), gen(emp)
+
+replace emp=. if Activb2==-9 | Activb2==-8 | Activb2==-1
+replace emp=0 if Activb2== 1
+replace emp=1 if Activb2==2 | Activb2==3
+
+replace emp=0 if Activb2==4 | Activb2==5 | Activb2==6 | Activb2==7 | Activb2==8 | Activb2==9 | Activb2==95
 label var emp "Employment status"
 label val emp vemp
+
+/*
+sclass                                                         Social Class
+---------------------------------------------------------------------------
+
+                  Type: Numeric (byte)
+                 Label: sclass
+
+                 Range: [-1,8]                        Units: 1
+         Unique values: 9                         Missing .: 66,234/145,375
+
+            Tabulation: Freq.   Numeric  Label
+                        4,207        -1  Item not applicable
+                        3,688         1  I    - Professional
+                       22,072         2  II   - Managerial technical
+                       17,891         3  IIIN - Skilled non-manual
+                       13,442         4  IIIM - Skilled manual
+                       13,187         5  IV   - Semi-skilled manual
+                        4,299         6  V    - Unskilled manual
+                          162         7  Armed forces
+                          193         8  Not fully described
+                       66,234         .  
+
+					   
+		sclass 12:
+		
+    Registrar General's Social |
+      Class of individual (old |
+  scheme, using SOC2000 instea |      Freq.     Percent        Cum.
+-------------------------------+-----------------------------------
+       -9      No answer/refused |        231        0.47        0.47
+	   -8	 Don't know
+       -1    Item not applicable |      3,118        6.34        6.81
+0 Not classifiable from SOC2000 |         33        0.07        6.87
+1              I - Professional |      2,759        5.61       12.48
+2     II - Managerial technical |     15,170       30.83       43.31
+                           3.1 |      9,852       20.02       63.33
+                           3.2 |      7,611       15.47       78.80
+4      IV - Semi-skilled manual |      8,178       16.62       95.42
+5          V - Unskilled manual |      2,217        4.51       99.93
+                             6 |    
+
+*/
+
+/*gen hh_imd_quint=.
+replace hh_imd_quint=1 if qimd==1 | imd2004==1 | imd2007==1
+replace hh_imd_quint=2 if qimd==2 | imd2004==2 | imd2007==2
+replace hh_imd_quint=3 if qimd==3 | imd2004==3 | imd2007==3
+replace hh_imd_quint=4 if qimd==4 | imd2004==4 | imd2007==4
+replace hh_imd_quint=5 if qimd==5 | imd2004==5 | imd2007==5
+label define vhh_imd_quint 1 "Quintile 1 [Least deprived]" 2 "Quintile 2" 3 "Quintile 3" 4 "Quintile 4" 5 "Quintile 5 [Most deprived]"
+label values hh_imd_quint vhh_imd_quint
+label var hh_imd_quint "Neighbourhood Index of Multiple Deprivation Quintiles [relative]"
+tab hh_imd_quint
+drop qimd imd2004 imd2007
+*/
 
 rename imd_h hh_imd_quint
 label values hh_imd_quint vhh_imd_quint
 label var hh_imd_quint "Neighbourhood Index of Multiple Deprivation Quintiles [relative]"
-
 
 gen hh_income=.
 replace hh_income=450 if totinc==1
@@ -526,7 +585,6 @@ replace chol_tot=. if chol_tot<chol_hdl & chol_hdl !=.
 replace chol_hdl=. if chol_hdl>chol_tot & chol_hdl !=.
 replace chol_tot=. if chol_hdl>chol_tot & chol_hdl !=.
 
-
 *HbA1c
 replace glyhb_h=. if glyhb_h<2.5 | glyhb_h>25
 gen hbA1c=10.93*glyhb_h-23.5 /*Converting percent to mmol/mol for pre 2012*/
@@ -643,7 +701,6 @@ replace lung=1 if compm8==1 | complst8==1
 label val lung vyesno
 label var lung "Respiratory condition"
 rename lung diag_lung
-
 
 *Asthma
 gen diag_asth=0
@@ -894,16 +951,12 @@ replace airtemp=. if airtemp<0
 *Dropping unneeded/original variables
 
 drop omsysval highbp bmival2 CVD_Risk sys1om sys2om sys3om dias1om dias2om dias3om
-
 drop medbp medcinbp bp1 ever* comp* topqual3 omdiaval car numcars *val *def doc* /*cluster Cluster_adults*/ diabetes medcnjd
-
 drop hhsize
-
 drop sclass sclass12
-
 drop ill12m* ILL12m illsm* longill limitill limlast totinc
-
 drop a30t06c year_s id2_s bpmedd bpmedd2 dnnow dnany dnevr
+drop activb Activb2 econact stwork
 
 *Excluding cases
 
@@ -990,7 +1043,7 @@ svyset psu [pweight=aweight_int], strata(stratum) singleunit(certainty)
 ******************************************************************************************************************************************************
 
 * Label the datset
-label data "EXPOSE ENGLAND - V. 1.1"
+label data "EXPOSE ENGLAND - V. 1.2"
 
 * Save   
 save "$OUT/EXPOSE_EN.dta", replace

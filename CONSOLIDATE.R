@@ -1213,6 +1213,6 @@ attr(DATA_EN$fhs_nonlab ,"label") <- "Framingham CVD non laboratory risk score"
 # (7) SAVE                                                                                                                                                               #
 ##########################################################################################################################################################################
 
-save(DATA_SA, file = "EXPOSE_SA_1.0.RData")
-save(DATA_EN, file = "EXPOSE_EN_1.0.RData")
+save(DATA_SA, file = "EXPOSE_SA_1.2.RData")
+save(DATA_EN, file = "EXPOSE_EN_1.2.RData")
 
