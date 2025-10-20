@@ -1,4 +1,4 @@
-﻿* Encoding: UTF-8.
+* Encoding: UTF-8.
 ******************************************************************************************************************************************************.
 * EXPOSE - DATA HARMONISATION                                                                                                                        *.
 *                                                                                                                                                    *.
@@ -6,7 +6,7 @@
 * OUTPUT: Harmonised HSE1998-2017 datsets (Stata format, input to EXTRACT_EN_2 do file)                                                              *.
 *                                                                                                                                                    *.
 * Shaun Scholes (s.scholes@ucl.ac.uk)                                                                                                                *.
-* Version 1.1 (23/10/2024)                                                                                                                           *.
+* Version 1.2 (19/10/2025)                                                                                                                           *.
 ******************************************************************************************************************************************************.
 
 ******************************************************************************************************************************************************.
@@ -46,6 +46,7 @@ dataset close all.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse98ai.sav'.
 missing values all ().
 exe.
+fre econact.
 sel if age>=16.
 EXECUTE.
 cro/tables = workactg by active.
@@ -501,8 +502,7 @@ benefit1 benefit4 benefit5 benefit7 benefit9 ndoctalk whendoc docmonth area lipi
 medtyp1 medtyp1_h medheart insulin  ghq12scr qrtint qrtnvis
 diag_hbp_h diag_stroke_h diag_angi_h diag_mi_h diag_diab_h diag_isch_h dimed_h
 outpat inpat dnnow dnany dnevr 
-pulse1 pulse2 pulse3.
-
+pulse1 pulse2 pulse3 econact activb stwork.
 
 *************************.
 *2000 (no diabetes).
@@ -527,6 +527,7 @@ dataset close all.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse01ai.sav'.
 missing values all ().
 exe.
+fre econact.
 sel if age>=16.
 EXECUTE.
 **Household id.
@@ -836,7 +837,7 @@ dias1om dias2om dias3om
 omsysval omdiaval highbp 
 bpmedd bpmedc bpmedd_h bpmedc_h ndoctalk whendoc docmonth pregntj totinc eqvinc eqv5 airtemp
 pillevr pilluse pill3 area porftvg lipid lipid_h medtyp1 medtyp1_h ghq12scr qrtint qrtnvis
-medcnjd dnnow dnany dnevr pulse1 pulse2 pulse3.
+medcnjd dnnow dnany dnevr pulse1 pulse2 pulse3 econact activb stwork.
 
 
 ****************.
@@ -847,10 +848,12 @@ dataset close all.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse02ai.sav'.
 missing values all ().
 exe.
+
 sel if age>=16.
 EXECUTE.
 sel if samptype=2.
 exe.
+fre econact.
 **Household id.
 compute hid=hserial.
 EXECUTE.
@@ -1158,7 +1161,7 @@ sys1om sys2om sys3om
 dias1om dias2om dias3om
 omsysval omdiaval highbp 
 bpmedd bpmedc bpmedd_h bpmedc_h airtemp pillevr pilluse pill3 area porftvg lipid lipid_h
-medtyp1 medtyp1_h ghq12scr qrtint qrtnvis medcnjd dnnow dnany dnevr nuroutc pulse1 pulse2 pulse3.
+medtyp1 medtyp1_h ghq12scr qrtint qrtnvis medcnjd dnnow dnany dnevr nuroutc pulse1 pulse2 pulse3 econact activb stwork.
 
 ***********
 *2003.
@@ -1168,6 +1171,7 @@ dataset close all.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse03ai.sav'.
 missing values all ().
 exe.
+fre econact.
 select if age>=16.
 EXECUTE.
 cro/tables = workactg by active.
@@ -1626,7 +1630,7 @@ benefit1 benefit4 benefit5 benefit7 benefit9 nuroutc
 bpmedd bpmedc bpmedd_h bpmedc_h 
 diabete3 porftvg lipid lipid_h medtyp1 medtyp1_h ghq12scr qrtint qrtnvis 
 diag_hbp_h diag_stroke_h diag_angi_h diag_mi_h diag_diab_h diag_isch_h dnnow dnany dnevr glyhb_h Glyhbval
-dimed_h medheart insulin puls1om puls2om puls3om. 
+dimed_h medheart insulin puls1om puls2om puls3om econact activb stwork.  
 
 
 *****************************************.
@@ -1637,6 +1641,7 @@ dataset close all.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse05ai.sav'.
 missing values all ().
 exe.
+fre econact.
 select if age>=16.
 EXECUTE.
 
@@ -2008,8 +2013,7 @@ ndoctalk whendoc docmonth dnnow dnany dnevr glyhbval glyhb_h samptype
 wt_intEL
 wt_nurEL
 wt_bldEL
-wt_int puls1om puls2om puls3om.
-
+wt_int puls1om puls2om puls3om econact activb stwork.
 
 ****************************.
 * 2006.
@@ -2021,6 +2025,7 @@ dataset close all.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse06ai.sav'.
 missing values all ().
 exe.
+fre econact.
 select if age>=16.
 EXECUTE.
 
@@ -2445,8 +2450,8 @@ srcin06b srcin07b srcin08b srcin09b srcin10b srcin11b srcin12b alclimit07b
 benefit1 benefit2 benefit4 benefit5 benefit6 benefit7 benefit9 nuroutc
 bpmedd bpmedc bpmedd_h bpmedc_h 
  diabete3 porftvg lipid lipid_h medtyp1 medtyp1_h medheart insulin dimed_h ghq12scr qrtint qrtnvis
-diag_hbp_h diag_stroke_h diag_angi_h diag_mi_h diag_diab_h diag_isch_h dnnow dnany dnevr glyhbval glyhb_h puls1om puls2om.
-
+diag_hbp_h diag_stroke_h diag_angi_h diag_mi_h diag_diab_h diag_isch_h dnnow dnany dnevr glyhbval glyhb_h puls1om puls2om econact
+activb stwork.
 
 ********
 * 2007.
@@ -2456,6 +2461,7 @@ dataset close all.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse07ai.sav'.
 missing values all ().
 exe.
+fre econact.
 select if age>=16.
 EXECUTE.
 
@@ -2675,7 +2681,8 @@ urban3 urban_b airtemp
 marstatc mstatus_h medcnjd bpmedd area cluster pregntj totinc eqvinc eqv5
 srcin06b srcin07b srcin08b srcin09b srcin10b srcin11b srcin12b alclimit07b
 benefit1 benefit2 benefit4 benefit5 benefit6 benefit7 benefit9 nuroutc
-bpmedd bpmedc bpmedd_h bpmedc_h porftvg lipid lipid_h medtyp1 medtyp1_h qrtint qrtnvis dnnow dnany dnevr puls1om puls2om puls3om .
+bpmedd bpmedc bpmedd_h bpmedc_h porftvg lipid lipid_h medtyp1 medtyp1_h qrtint qrtnvis dnnow dnany dnevr puls1om puls2om puls3om econact
+activb stwork.
 
 
 * 2008.
@@ -2684,6 +2691,7 @@ DATASET CLOSE ALL.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse08ai.sav'.
 missing values all ().
 exe.
+fre econact.
 **Household id.
 compute hid=hserial.
 EXECUTE.
@@ -2923,7 +2931,7 @@ marstatc mstatus_h medcnjd bpmedd cluster  pregntj a30t06c hdlchol hdlval1a toti
 srcin06b srcin07b srcin08b srcin09b srcin10b srcin11b srcin12b alclimit07b
 benefit1 benefit2 benefit4 benefit5 benefit6 benefit7 benefit9 nuroutc
 bpmedd bpmedc bpmedd_h bpmedc_h  lipid lipid_h medtyp1 medtyp1_h ghq12scr qrtint qrtnvis dnnow dnany dnevr glyhbval glyhb_h
-puls1om puls2om puls3om.
+puls1om puls2om puls3om econact activb stwork.
 
 
 * 2009.
@@ -2932,6 +2940,7 @@ DATASET CLOSE ALL.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse09ai.sav'.
 missing values all ().
 exe.
+fre econact.
 select if age>=16.
 EXECUTE.
 **Household id.
@@ -3214,18 +3223,14 @@ marstatc mstatus_h medcnjd  everbp everdi diabtype diabetes docbp psu cluster pr
 srcin06b srcin07b srcin08b srcin09b srcin10b srcin11b srcin12b alclimit07b
 benefit1 benefit2 benefit4 benefit5 benefit6 benefit7 benefit9 nuroutc
 bpmedd bpmedc bpmedd_h bpmedc_h diabete3 lipid lipid_h medtyp1 medtyp1_h insulin dimed_h ghq12scr qrtint qrtnvis dnnow dnany dnevr glyhbval glyhb_h
-puls1om puls2om puls3om.
-
-
-
-
-
+puls1om puls2om puls3om econact activb stwork.
 
 *2010.
 DATASET CLOSE ALL.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse10ai.sav'.
 select if age>=16.
 EXECUTE.
+fre econact.
 missing values all ().
 exe.
 
@@ -3513,14 +3518,14 @@ srcin06b srcin07b srcin08b srcin09b srcin10b srcin11b srcin12b alclimit07b
 benefit1 benefit2 benefit4 benefit5 benefit6 benefit7 benefit9 nuroutc
 bpmedd bpmedc bpmedd_h bpmedc_h diabete3 lipid lipid_h
 medtyp1 medtyp1_h insulin dimed_h ghq12scr qrtint qrtnvis dnnow dnany dnevr  glyhbval glyhb_h
-puls1om puls2om puls3om.
-
+puls1om puls2om puls3om econact activb stwork.
 
 * 2011.
 DATASET CLOSE ALL.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse2011ai.sav'.
 missing values all ().
 exe.
+fre econact.
 select if age>=16.
 EXECUTE.
 **Household id.
@@ -3842,14 +3847,15 @@ pregnowb pregntj hdlval1 totinc eqvinc eqv5
 srcin06b srcin07b srcin08b srcin09b srcin10b srcin11b srcin12b alclimit07b totalwug totalwu
 benefit1 benefit2 benefit4 benefit5 benefit6 benefit7 benefit9 nuroutc
 bpmedd bpmedc bpmedd_h bpmedc_h diabete3 lipid lipid_h medtyp1 medtyp1_h medheart insulin dimed_h qrtint qrtnvis
-diag_hbp_h diag_stroke_h diag_angi_h diag_mi_h diag_diab_h diag_isch_h dnnow dnany dnevr  glyhbval glyhb_h puls1om puls2om puls3om.
-
+diag_hbp_h diag_stroke_h diag_angi_h diag_mi_h diag_diab_h diag_isch_h dnnow dnany dnevr  glyhbval glyhb_h puls1om puls2om puls3om econact
+activb stwork.
 
 *2012 (ill12m rather than longill).
 DATASET CLOSE ALL.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse2012ai.sav'.
 missing values all ().
 exe.
+fre econact.
 desc var wtval wtval2.
 desc var bmival bmival2.
 select if age>=16.
@@ -4147,7 +4153,7 @@ srcin05c srcin08c srcin06c srcin07c srcin09c srcin10c srcin12c srcin13c srcin14c
 benefit1 benefit2 benefit3 benefit4 benefit5 benefit6 benefit7 benefit8 benefit9 nuroutc
 bpmedd2 bpmedc2 bpmedd_h bpmedc_h 
 diabete3 diab3mmol lipid2 lipid_h medtyp1 medtyp1_h insulin dimed_h ghq12scr qrtint qrtnvis dnnow dnany dnevr
-ifcca1 glyhbval glyhb_h glyhb2_h puls1om puls2om puls3om.
+ifcca1 glyhbval glyhb_h glyhb2_h puls1om puls2om puls3om econact activb stwork.
 
 
 * 2013.
@@ -4155,6 +4161,7 @@ DATASET CLOSE ALL.
 GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\hse2013ai.sav'.
 missing values all ().
 exe.
+fre econact.
 select if age>=16.
 EXECUTE.
 
@@ -4476,8 +4483,7 @@ benefit1 benefit2 benefit3 benefit4 benefit5 benefit6 benefit7 benefit8 benefit9
 bpmedd2 bpmedc2 bpmedd_h bpmedc_h
 diabete3 diab3mmol ndoctalk whendoc  docmonth lipid2 lipid_h medtyp1 medtyp1_h insulin dimed_h
 OutPat01 OutPat02 OutPat03 OutPat95 InPat dnnow dnany dnevr
-ifcca1 iffcvala glyhbval glyhb_h glyhb2_h puls1om puls2om puls3om.
-
+ifcca1 iffcvala glyhbval glyhb_h glyhb2_h puls1om puls2om puls3om econact activb stwork.
 
 * 2014.
 * urban variable cannot be right.
@@ -4486,6 +4492,7 @@ GET FILE='C:\Users\rmjdshc\OneDrive - University College London\Expose\Datasets\
 missing values all ().
 select if ag16g10>=1.
 EXECUTE.
+fre econact.
 compute age=age90.
 exe.
 
@@ -4781,9 +4788,7 @@ benefit1 benefit2 benefit3 benefit4 benefit5 benefit6 benefit7 benefit8 benefit9
 bpmedd2 bpmedc2 bpmedd_h bpmedc_h
 diabete3 diab3mmol ndoctalk whendoc  docmonth lipid2 lipid_h medtyp1 medtyp1_h insulin dimed_h ghq12scr
 OutPat01 OutPat02 OutPat03 OutPat95 InPat dnnow dnany dnevr
-ifcca1 iffcvala glyhbval glyhb_h glyhb2_h puls1om puls2om puls3om.
-
-
+ifcca1 iffcvala glyhbval glyhb_h glyhb2_h puls1om puls2om puls3om econact activb stwork.
 
 *2015 special license.
 *2015.
@@ -5750,7 +5755,7 @@ sclass sclass12 car wt_intEL
 wt_nurEL
 wt_bldEL
 wt_int samptype pulse1 pulse2 pulse3
-puls1om puls2om puls3om.
+puls1om puls2om puls3om econact activb activb2 stwork.
 
 
 
